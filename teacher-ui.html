@@ -1,0 +1,2720 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Minecraft Checker Builder (.mcworld + .mkcd)</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0f1420;--surface:#16213e;--surface2:#1a2744;--surface3:#233158;
+  --accent:#e94560;--accent2:#4dabf7;--text:#ecf0f1;--dim:#95a5a6;--muted:#6c7a89;
+  --green:#2ecc71;--yellow:#f39c12;--red:#e74c3c;--border:rgba(255,255,255,.08);
+}
+html,body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;min-height:100vh}
+body{font-size:14px;line-height:1.5}
+button{font-family:inherit}
+
+.topbar{background:linear-gradient(135deg,var(--surface),var(--surface2));padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px;flex-wrap:wrap;position:sticky;top:0;z-index:20}
+.topbar h1{font-size:1.15rem;font-weight:700;letter-spacing:.3px;flex-shrink:0}
+.topbar .subtitle{color:var(--dim);font-size:.8rem;flex:1;min-width:200px}
+.topbar-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+.lang-switch{display:inline-flex;background:var(--bg);border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.lang-switch button{background:transparent;border:none;color:var(--dim);padding:6px 10px;font-size:.78rem;font-weight:600;cursor:pointer;letter-spacing:.5px}
+.lang-switch button.active{background:var(--accent2);color:#fff}
+.lang-switch button:not(.active):hover{background:var(--surface2);color:var(--text)}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 16px;border:1px solid var(--border);border-radius:6px;background:var(--surface3);color:var(--text);font-size:.85rem;font-weight:500;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn:hover{border-color:var(--accent2);background:var(--surface2)}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.btn-primary:hover{filter:brightness(1.15);background:var(--accent)}
+.btn-ghost{background:transparent}
+.btn-sm{padding:5px 10px;font-size:.78rem}
+.btn-danger{color:var(--red);border-color:transparent;background:transparent}
+.btn-danger:hover{background:rgba(231,76,60,.1);border-color:rgba(231,76,60,.3)}
+
+.lesson-meta{background:var(--surface);padding:14px 24px;border-bottom:1px solid var(--border);display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap}
+.field{display:flex;flex-direction:column;gap:4px;min-width:180px}
+.field.flex-grow{flex:1}
+.field label{font-size:.7rem;text-transform:uppercase;letter-spacing:.8px;color:var(--dim)}
+.field input,.field select,.field textarea{padding:7px 10px;border:1px solid var(--border);border-radius:5px;background:var(--bg);color:var(--text);font-size:.88rem;outline:none;font-family:inherit}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+.field textarea{resize:vertical;min-height:60px}
+.field small{color:var(--muted);font-size:.72rem}
+
+.main{display:grid;grid-template-columns:minmax(340px,1fr) minmax(440px,1.4fr);gap:0;align-items:start}
+@media (max-width:1100px){.main{grid-template-columns:1fr}}
+
+.pane{padding:20px 24px}
+.pane-catalog{background:var(--surface);border-right:1px solid var(--border)}
+@media (max-width:1100px){.pane-catalog{border-right:none;border-bottom:1px solid var(--border)}}
+.pane-builder{background:var(--bg)}
+
+.pane h2{font-size:.78rem;text-transform:uppercase;letter-spacing:1.2px;color:var(--dim);margin-bottom:12px;font-weight:600}
+.pane-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:12px;flex-wrap:wrap}
+.pane-title-row h2{margin-bottom:0}
+
+.category-section{margin-bottom:6px}
+.section-header{display:flex;align-items:baseline;gap:10px;padding:12px 4px 6px;border-bottom:1px solid var(--border);margin:6px 0 14px}
+.section-header .sh-icon{font-size:1rem;flex-shrink:0}
+.section-header .sh-title{font-size:.78rem;font-weight:700;letter-spacing:1.2px;text-transform:uppercase}
+.section-header .sh-sub{font-size:.7rem;color:var(--dim);font-family:Consolas,monospace;letter-spacing:.4px;margin-left:auto}
+.category-section[data-section="world"] .section-header{border-bottom-color:rgba(77,171,247,.35)}
+.category-section[data-section="world"] .sh-title{color:#7cc4ff}
+.category-section[data-section="code"] .section-header{border-bottom-color:rgba(243,156,18,.4)}
+.category-section[data-section="code"] .sh-title{color:#f5b041}
+.category-group{margin-bottom:18px}
+.category-header{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface2);border-radius:6px;margin-bottom:6px;cursor:pointer;user-select:none}
+.category-header:hover{background:var(--surface3)}
+.category-header .cat-icon{font-size:1.1rem}
+.category-header .cat-name{font-weight:600;font-size:.9rem;flex:1}
+.category-header .cat-count{font-size:.72rem;color:var(--dim);background:var(--bg);padding:2px 8px;border-radius:10px}
+.category-header .chevron{transition:transform .15s;color:var(--dim)}
+.category-group.collapsed .chevron{transform:rotate(-90deg)}
+.category-group.collapsed .category-items{display:none}
+
+.catalog-item{padding:10px 12px;border:1px solid var(--border);border-radius:6px;margin-bottom:6px;cursor:pointer;transition:all .15s;background:var(--bg)}
+.catalog-item:hover{border-color:var(--accent2);background:var(--surface2)}
+.catalog-item .ci-title{font-weight:500;font-size:.88rem;margin-bottom:3px;display:flex;align-items:center;gap:6px;justify-content:space-between}
+.catalog-item .ci-desc{font-size:.78rem;color:var(--dim);line-height:1.45}
+.catalog-item .ci-add{color:var(--accent2);font-size:.78rem;font-weight:600;flex-shrink:0}
+
+.empty-builder{text-align:center;padding:40px 20px;color:var(--dim);border:2px dashed var(--border);border-radius:10px}
+.empty-builder .icon{font-size:2rem;margin-bottom:10px;display:block;opacity:.6}
+
+.check-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:10px;overflow:hidden}
+.check-card-header{padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none}
+.check-card-header:hover{background:var(--surface2)}
+.check-card-header .ch-title{flex:1;font-weight:500;font-size:.92rem}
+.check-card-header .ch-type{font-size:.7rem;color:var(--dim);font-family:ui-monospace,monospace}
+.check-card-header .ch-target{display:inline-flex;align-items:center;gap:3px;font-size:.7rem;font-weight:600;padding:2px 7px;border-radius:10px;letter-spacing:.3px;flex-shrink:0}
+.check-card-header .ch-target.world{background:rgba(77,171,247,.15);color:#7cc4ff;border:1px solid rgba(77,171,247,.3)}
+.check-card-header .ch-target.code{background:rgba(243,156,18,.12);color:#f5b041;border:1px solid rgba(243,156,18,.3)}
+.check-card-body{padding:14px;border-top:1px solid var(--border);background:var(--bg);display:none}
+.check-card.open .check-card-body{display:block}
+.check-card.open .chevron-c{transform:rotate(90deg)}
+.chevron-c{transition:transform .15s;color:var(--dim)}
+
+.param-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.param-row .field{min-width:0}
+@media (max-width:600px){.param-row{grid-template-columns:1fr}}
+
+.preview-banner{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-top:20px}
+.preview-requires{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.78rem;color:var(--dim);margin-bottom:12px;padding:8px 10px;background:var(--bg);border-radius:6px}
+.preview-requires .pr-label{font-weight:500}
+.preview-requires .pr-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:12px;font-size:.74rem;font-weight:600}
+.preview-requires .pr-badge.world{background:rgba(77,171,247,.15);color:#7cc4ff}
+.preview-requires .pr-badge.code{background:rgba(243,156,18,.12);color:#f5b041}
+.preview-requires .pr-badge .pr-count{opacity:.7;margin-left:2px}
+.preview-banner h3{font-size:.78rem;text-transform:uppercase;letter-spacing:1px;color:var(--dim);margin-bottom:10px}
+.preview-list{display:flex;flex-direction:column;gap:6px}
+.preview-item{display:flex;gap:8px;align-items:flex-start;padding:8px 10px;background:var(--bg);border-radius:5px;font-size:.85rem}
+.preview-item .dot{width:10px;height:10px;border-radius:50%;background:var(--muted);flex-shrink:0;margin-top:5px}
+.preview-item .pi-body{flex:1}
+.preview-item .pi-hint{font-size:.76rem;color:var(--dim);margin-top:3px;line-height:1.45}
+
+.toast{position:fixed;bottom:20px;right:20px;background:var(--surface3);border:1px solid var(--border);border-radius:8px;padding:12px 18px;font-size:.88rem;box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:1000;opacity:0;transform:translateY(10px);transition:all .2s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.error{border-color:var(--red);color:var(--red)}
+.toast.success{border-color:var(--green)}
+
+.hint{font-size:.76rem;color:var(--muted);margin-top:4px;line-height:1.45}
+.hint strong{color:var(--dim)}
+
+.help-icon{display:inline-flex;width:15px;height:15px;border-radius:50%;background:var(--surface3);color:var(--dim);font-size:.7rem;align-items:center;justify-content:center;font-weight:700;cursor:help;margin-left:6px}
+
+.param-hint{font-size:.75rem;color:var(--dim);line-height:1.45;background:var(--surface2);border-left:3px solid var(--accent2);padding:8px 10px;margin:10px 0;border-radius:0 4px 4px 0}
+
+.presets-hint{font-size:.78rem;color:var(--dim);padding:8px 10px;background:var(--surface2);border-radius:5px;margin-bottom:14px}
+
+/* ========== ONBOARDING TOUR ========== */
+.tour-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;opacity:0;pointer-events:none;transition:opacity .2s}
+.tour-backdrop.active{opacity:1}
+.tour-spotlight{position:fixed;border-radius:8px;box-shadow:0 0 0 9999px rgba(0,0,0,.55),0 0 0 3px var(--accent2);transition:left .2s ease,top .2s ease,width .2s ease,height .2s ease;pointer-events:none;z-index:9050}
+.tour-popover{position:fixed;background:var(--surface);border:1px solid var(--accent2);border-radius:10px;padding:18px 20px;width:340px;max-width:calc(100vw - 32px);z-index:9100;box-shadow:0 12px 40px rgba(0,0,0,.5);transition:left .2s ease,top .2s ease}
+.tour-popover h3{font-size:1rem;font-weight:700;margin-bottom:8px;color:var(--text)}
+.tour-popover p{font-size:.86rem;color:var(--text);line-height:1.5;margin-bottom:14px}
+.tour-popover .tour-nav{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.tour-popover .tour-counter{font-size:.75rem;color:var(--dim)}
+.tour-popover .tour-buttons{display:flex;gap:8px}
+.tour-popover .tour-arrow{position:absolute;width:0;height:0;border-style:solid}
+.tour-popover.arrow-top .tour-arrow{top:-8px;left:24px;border-width:0 8px 8px 8px;border-color:transparent transparent var(--accent2) transparent}
+.tour-popover.arrow-bottom .tour-arrow{bottom:-8px;left:24px;border-width:8px 8px 0 8px;border-color:var(--accent2) transparent transparent transparent}
+.tour-popover.arrow-left .tour-arrow{left:-8px;top:24px;border-width:8px 8px 8px 0;border-color:transparent var(--accent2) transparent transparent}
+.tour-popover.arrow-right .tour-arrow{right:-8px;top:24px;border-width:8px 0 8px 8px;border-color:transparent transparent transparent var(--accent2)}
+
+.btn-tour{background:linear-gradient(135deg,#4dabf7,#3690d8);border-color:#3690d8;color:#fff;font-weight:600}
+.btn-tour:hover{filter:brightness(1.1);background:linear-gradient(135deg,#4dabf7,#3690d8)}
+
+.tour-pulse{animation:tourPulse 1.4s ease-in-out infinite}
+@keyframes tourPulse{0%,100%{box-shadow:0 0 0 9999px rgba(0,0,0,.55),0 0 0 3px var(--accent2)}50%{box-shadow:0 0 0 9999px rgba(0,0,0,.55),0 0 0 6px var(--accent)}}
+
+/* ========== HELP / CHEATSHEET MODAL ========== */
+.help-overlay{position:fixed;inset:0;background:rgba(10,15,30,.78);display:flex;align-items:center;justify-content:center;z-index:8000;padding:30px 20px;opacity:0;pointer-events:none;transition:opacity .2s}
+.help-overlay.active{opacity:1;pointer-events:auto}
+.help-modal{background:var(--bg);border:1px solid var(--border);border-radius:12px;width:100%;max-width:920px;max-height:90vh;overflow:auto;padding:0;position:relative}
+.help-header{position:sticky;top:0;background:linear-gradient(135deg,var(--surface),var(--surface2));padding:18px 28px;border-bottom:1px solid var(--border);z-index:2;display:flex;align-items:center;gap:14px}
+.help-header h2{font-size:1.15rem;font-weight:700;flex:1}
+.help-header .help-close{background:transparent;border:1px solid var(--border);color:var(--dim);padding:6px 12px;border-radius:6px;font-size:.95rem;cursor:pointer}
+.help-header .help-close:hover{color:var(--text);border-color:var(--accent2)}
+.help-header .help-print{background:var(--surface3);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:6px;font-size:.85rem;font-weight:500;cursor:pointer}
+.help-header .help-print:hover{border-color:var(--accent2)}
+
+.help-body{padding:24px 28px}
+.help-section{margin-bottom:32px}
+.help-section h3{font-size:.85rem;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--accent2);padding-bottom:8px;border-bottom:1px solid rgba(77,171,247,.3);margin-bottom:14px}
+
+.recipes-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.recipe-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px}
+.recipe-card .recipe-head{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}
+.recipe-card .recipe-icon{font-size:1.1rem}
+.recipe-card .recipe-title{font-weight:600;font-size:.95rem;flex:1}
+.recipe-card .recipe-tag{font-size:.7rem;color:var(--dim);font-family:Consolas,monospace}
+.recipe-card .recipe-checks{display:flex;flex-direction:column;gap:3px;font-size:.78rem;color:var(--text);font-family:Consolas,'Cascadia Mono',monospace;line-height:1.6}
+.recipe-card .recipe-checks .rc-tag{display:inline-block;padding:1px 6px;border-radius:4px;font-size:.66rem;margin-right:6px;font-family:inherit;font-weight:600}
+.recipe-card .recipe-checks .rc-tag.world{background:rgba(77,171,247,.15);color:#7cc4ff}
+.recipe-card .recipe-checks .rc-tag.code{background:rgba(243,156,18,.12);color:#f5b041}
+
+.file-diagram{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:600px){.file-diagram{grid-template-columns:1fr}}
+.file-card{padding:18px 16px;border-radius:10px;text-align:center}
+.file-card.world{background:rgba(77,171,247,.08);border:1px solid rgba(77,171,247,.3)}
+.file-card.code {background:rgba(243,156,18,.07);border:1px solid rgba(243,156,18,.3)}
+.file-card .fc-icon{font-size:2rem}
+.file-card .fc-ext {font-family:Consolas,monospace;font-size:.85rem;color:var(--dim);margin-top:2px}
+.file-card .fc-title{font-weight:600;font-size:1rem;margin-top:6px}
+.file-card .fc-desc{font-size:.82rem;color:var(--dim);margin-top:6px;line-height:1.5}
+.file-card .fc-count{display:inline-block;margin-top:10px;padding:3px 12px;background:var(--bg);border-radius:14px;font-size:.78rem;font-weight:600}
+
+.checks-list-cat{margin-bottom:18px}
+.checks-list-cat h4{font-size:.78rem;text-transform:uppercase;letter-spacing:.8px;color:var(--dim);margin-bottom:8px;font-weight:600}
+.checks-list-rows{display:grid;grid-template-columns:1fr;gap:2px}
+.check-row{display:grid;grid-template-columns:14px 220px 1fr;align-items:baseline;gap:10px;padding:5px 8px;border-radius:4px;font-size:.83rem}
+.check-row:hover{background:var(--surface2)}
+.check-row .cr-mark{color:var(--green);font-weight:700;text-align:center}
+.check-row .cr-id{font-family:Consolas,'Cascadia Mono',monospace;color:var(--accent2);font-size:.78rem}
+.check-row .cr-desc{color:var(--text);line-height:1.4}
+@media(max-width:600px){.check-row{grid-template-columns:1fr;gap:2px}.check-row .cr-mark{display:none}}
+
+@media print{
+  body > :not(.help-overlay){display:none !important}
+  .help-overlay{position:static;background:none;display:block;padding:0;opacity:1}
+  .help-modal{max-width:none;max-height:none;border:none;background:#fff;color:#000}
+  .help-modal *{color:#000 !important;background:#fff !important;border-color:#999 !important;text-shadow:none !important}
+  .help-header{position:static;border-bottom:2px solid #000}
+  .help-print,.help-close{display:none !important}
+  .recipe-card,.file-card,.checks-list-cat{break-inside:avoid;page-break-inside:avoid}
+  .help-section{page-break-after:auto}
+  a{color:#000 !important;text-decoration:none}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1 id="appTitle"></h1>
+  <div class="subtitle" id="appSubtitle"></div>
+  <div class="topbar-actions">
+    <div class="lang-switch" id="langSwitch">
+      <button data-lang="es">ES</button>
+      <button data-lang="ru">RU</button>
+      <button data-lang="en">EN</button>
+    </div>
+    <button class="btn btn-tour" id="btnTour" title="">🎓 <span data-t="btn.tour"></span></button>
+    <button class="btn" id="btnHelp" title="">📋 <span data-t="btn.help"></span></button>
+    <button class="btn" id="btnLoadPreset"></button>
+    <button class="btn" id="btnImport"></button>
+    <button class="btn" id="btnExportJson"></button>
+    <button class="btn btn-primary" id="btnExportZip"></button>
+  </div>
+</div>
+
+<div class="lesson-meta">
+  <div class="field" style="min-width:140px" id="field-lessonId">
+    <label><span data-t="field.lessonId"></span> <span class="help-icon" data-t-attr="title:field.lessonId.help">?</span></label>
+    <input type="text" id="lessonId" value="M1L3" placeholder="M1L3" maxlength="20">
+  </div>
+  <div class="field flex-grow" id="field-lessonName">
+    <label data-t="field.lessonName"></label>
+    <input type="text" id="lessonName" data-t-attr="placeholder:field.lessonName.placeholder">
+  </div>
+  <div class="field flex-grow" id="field-lessonIntro">
+    <label><span data-t="field.lessonIntro"></span> <span class="help-icon" data-t-attr="title:field.lessonIntro.help">?</span></label>
+    <input type="text" id="lessonIntro">
+  </div>
+</div>
+
+<div class="main">
+  <aside class="pane pane-catalog">
+    <div class="pane-title-row">
+      <h2 id="catalogTitle"></h2>
+    </div>
+    <div class="presets-hint" id="catalogIntro"></div>
+    <div id="catalogRoot"></div>
+  </aside>
+
+  <div class="pane pane-builder">
+    <div class="pane-title-row">
+      <h2><span id="builderTitle"></span> (<span id="checkCount">0</span>)</h2>
+      <button class="btn btn-sm btn-ghost" id="btnClearAll"></button>
+    </div>
+
+    <div id="builderRoot"></div>
+
+    <div class="preview-banner" id="previewBanner">
+      <h3 id="previewTitle"></h3>
+      <div id="previewRequires" class="preview-requires" style="display:none"></div>
+      <div id="previewRoot" class="preview-list"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<input type="file" id="fileImport" accept=".json" style="display:none">
+
+<!-- ============================================================ -->
+<!-- HELP / CHEATSHEET MODAL                                      -->
+<!-- ============================================================ -->
+<div class="help-overlay" id="helpOverlay">
+  <div class="help-modal">
+    <div class="help-header">
+      <h2 id="helpTitle">📋 Справочник</h2>
+      <button class="help-print" id="helpPrintBtn">🖨 <span data-t="help.print"></span></button>
+      <button class="help-close" id="helpCloseBtn"><span data-t="help.close"></span></button>
+    </div>
+    <div class="help-body" id="helpBody"></div>
+  </div>
+</div>
+
+<!-- Tour overlay -->
+<div class="tour-backdrop" id="tourBackdrop"></div>
+<div class="tour-spotlight" id="tourSpotlight" style="display:none"></div>
+<div class="tour-popover" id="tourPopover" style="display:none">
+  <span class="tour-arrow"></span>
+  <h3 id="tourTitle"></h3>
+  <p id="tourBody"></p>
+  <div class="tour-nav">
+    <span class="tour-counter" id="tourCounter"></span>
+    <div class="tour-buttons">
+      <button class="btn btn-sm btn-ghost" id="tourSkip"></button>
+      <button class="btn btn-sm" id="tourPrev"></button>
+      <button class="btn btn-sm btn-primary" id="tourNext"></button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- CHECKER TEMPLATE — full FrameBox checker, rendered into ZIP  -->
+<!-- ============================================================ -->
+<script type="text/plain" id="checkerTemplate"><!DOCTYPE html>
+<html lang="__LANG__">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>__LESSON_NAME__</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"><\/script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"><\/script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lzma/2.3.0/lzma-min.js"><\/script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/acorn/8.11.3/acorn.min.js"><\/script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#1a1a2e;--surface:#16213e;--accent:#e94560;--text:#ecf0f1;--dim:#95a5a6;--green:#2ecc71;--yellow:#f39c12;--red:#e74c3c;--surface2:#1a2744}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.header{text-align:center;padding:24px 16px 12px;background:linear-gradient(135deg,var(--surface),var(--surface2))}
+.header h1{font-size:1.6rem;font-weight:700;letter-spacing:.5px}
+.header p{color:var(--dim);font-size:.85rem;margin-top:4px}
+.container{max-width:960px;margin:0 auto;padding:16px}
+.form-card{background:var(--surface);border-radius:12px;padding:20px;margin-bottom:20px;border:1px solid rgba(255,255,255,.06)}
+.req-banner{display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(77,171,247,.08);border:1px solid rgba(77,171,247,.25);border-radius:8px;margin-bottom:14px;font-size:.85rem;color:var(--text);flex-wrap:wrap}
+.req-banner .req-icon{font-size:1.05rem}
+.req-banner .req-badges{display:inline-flex;gap:6px;flex-wrap:wrap}
+.req-banner .req-badge{background:var(--surface);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:2px 10px;font-size:.78rem;font-weight:600;display:inline-flex;align-items:center;gap:4px}
+.drop-grid{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:12px}
+.drop-grid.dual{grid-template-columns:1fr 1fr}
+@media(max-width:680px){.drop-grid.dual{grid-template-columns:1fr}}
+.drop-slot{position:relative;background:rgba(255,255,255,.02);border:2px dashed rgba(255,255,255,.18);border-radius:10px;padding:18px 14px;text-align:center;cursor:pointer;transition:all .2s;min-height:130px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.drop-slot:hover,.drop-slot.dragover{border-color:var(--accent);background:rgba(233,69,96,.06)}
+.drop-slot.loaded{border-style:solid;border-color:rgba(46,204,113,.6);background:rgba(46,204,113,.06)}
+.drop-slot.error{border-color:rgba(231,76,60,.6);background:rgba(231,76,60,.06)}
+.drop-slot input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;z-index:1}
+.drop-slot .slot-icon{font-size:1.6rem}
+.drop-slot .slot-title{font-weight:600;font-size:.95rem;margin-top:2px}
+.drop-slot .slot-ext{font-size:.72rem;color:var(--dim);font-family:Consolas,Monaco,monospace;letter-spacing:.5px}
+.drop-slot .slot-status{font-size:.78rem;color:var(--dim);margin-top:6px;word-break:break-all;max-width:100%}
+.drop-slot.loaded .slot-status{color:#62d490}
+.drop-slot .slot-clear{position:absolute;top:6px;right:6px;background:transparent;border:none;color:var(--dim);font-size:1.05rem;cursor:pointer;padding:4px 8px;border-radius:4px;z-index:2;line-height:1}
+.drop-slot .slot-clear:hover{color:var(--red);background:rgba(231,76,60,.12)}
+.results-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.card{background:var(--surface);border-radius:10px;padding:14px;cursor:pointer;transition:all .2s;border:1px solid rgba(255,255,255,.06);display:flex;gap:12px;align-items:flex-start}
+.card:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:0 4px 20px rgba(0,0,0,.3)}
+.card-thumb{width:56px;height:56px;border-radius:6px;background:var(--bg);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.5rem;overflow:hidden}
+.card-thumb img{width:100%;height:100%;object-fit:cover}
+.card-body{flex:1;min-width:0}
+.card-name{font-weight:600;font-size:.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-lesson{font-size:.72rem;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.card-dots{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+.dot{width:10px;height:10px;border-radius:50%}
+.dot.pass{background:var(--green)}.dot.fail{background:var(--red)}
+.card-score{font-size:.8rem;color:var(--dim);margin-top:6px}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-overlay.active{opacity:1;pointer-events:auto}
+.modal{background:var(--surface);border-radius:14px;max-width:640px;width:100%;max-height:85vh;overflow-y:auto;padding:24px;position:relative;border:1px solid rgba(255,255,255,.08)}
+.modal-close{position:absolute;top:12px;right:14px;background:none;border:none;color:var(--dim);font-size:1.4rem;cursor:pointer;line-height:1}
+.modal h2{font-size:1.15rem;margin-bottom:4px}
+.modal .lesson-tag{font-size:.72rem;color:var(--dim);text-transform:uppercase;letter-spacing:.5px}
+.modal-section{margin-top:16px}
+.modal-section h3{font-size:.8rem;text-transform:uppercase;letter-spacing:.8px;color:var(--dim);margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,.06)}
+.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 16px}
+.meta-item{font-size:.85rem}.meta-item span{color:var(--dim)}
+.checklist-item{display:flex;align-items:flex-start;gap:8px;padding:7px 0;font-size:.88rem}
+.check-icon{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;flex-shrink:0;color:#fff;font-weight:700;margin-top:2px}
+.check-icon.pass{background:var(--green)}.check-icon.fail{background:var(--red)}
+.checklist-item .hint{font-size:.76rem;color:var(--dim);margin-top:2px;line-height:1.45}
+.npc-card{background:var(--bg);border-radius:8px;padding:12px;margin-bottom:8px}
+.npc-card .npc-name{font-weight:600;font-size:.92rem}
+.npc-card .npc-pos{font-size:.75rem;color:var(--dim);margin-top:2px}
+.npc-card .npc-dialogue{margin-top:6px;padding:8px;background:var(--surface2);border-radius:6px;font-size:.85rem;line-height:1.5;white-space:pre-wrap;word-break:break-word}
+.npc-card .npc-buttons{margin-top:6px;display:flex;flex-wrap:wrap;gap:4px}
+.npc-btn-tag{font-size:.75rem;padding:3px 8px;border-radius:4px;background:rgba(233,69,96,.15);color:var(--accent)}
+.modal-thumb{width:100%;max-height:160px;object-fit:cover;border-radius:8px;margin-bottom:12px}
+.mc-bold{font-weight:700}.mc-italic{font-style:italic}.mc-obfuscated{animation:obf .1s infinite}
+@keyframes obf{0%{opacity:.8}50%{opacity:.2}100%{opacity:.8}}
+.mc-0{color:#000}.mc-1{color:#00a}.mc-2{color:#0a0}.mc-3{color:#0aa}.mc-4{color:#a00}.mc-5{color:#a0a}.mc-6{color:#fa0}.mc-7{color:#aaa}
+.mc-8{color:#555}.mc-9{color:#55f}.mc-a{color:#5f5}.mc-b{color:#5ff}.mc-c{color:#f55}.mc-d{color:#f5f}.mc-e{color:#ff5}.mc-f{color:#fff}
+.spinner{display:inline-block;width:20px;height:20px;border:3px solid rgba(255,255,255,.2);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.error-msg{background:rgba(231,76,60,.12);border:1px solid rgba(231,76,60,.3);border-radius:8px;padding:10px 14px;color:var(--red);font-size:.85rem;margin-bottom:12px;display:none}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1 id="lessonTitle">__LESSON_NAME__</h1>
+  <p id="lessonIntro">__LESSON_INTRO__</p>
+</div>
+<div class="container">
+  <div class="form-card">
+    <div class="req-banner" id="reqBanner" style="display:none">
+      <span class="req-icon">📋</span>
+      <span id="reqLabel"></span>
+      <span class="req-badges" id="reqBadges"></span>
+    </div>
+    <div class="drop-grid" id="dropGrid">
+      <div class="drop-slot" data-target="world" id="slotWorld" style="display:none">
+        <input type="file" accept=".mcworld" data-target="world">
+        <button type="button" class="slot-clear" data-target="world" hidden>✕</button>
+        <div class="slot-icon">🌍</div>
+        <div class="slot-title" id="slotWorldTitle">__SLOT_WORLD_TITLE__</div>
+        <div class="slot-ext">.mcworld</div>
+        <div class="slot-status" id="slotWorldStatus">__SLOT_WORLD_EMPTY__</div>
+      </div>
+      <div class="drop-slot" data-target="code" id="slotCode" style="display:none">
+        <input type="file" accept=".mkcd" data-target="code">
+        <button type="button" class="slot-clear" data-target="code" hidden>✕</button>
+        <div class="slot-icon">💻</div>
+        <div class="slot-title" id="slotCodeTitle">__SLOT_CODE_TITLE__</div>
+        <div class="slot-ext">.mkcd</div>
+        <div class="slot-status" id="slotCodeStatus">__SLOT_CODE_EMPTY__</div>
+      </div>
+    </div>
+    <div class="error-msg" id="errorMsg"></div>
+    <div id="spinnerWrap" style="display:none;text-align:center;padding:12px">
+      <span class="spinner"></span>
+      <span style="color:var(--dim);margin-left:8px;font-size:.85rem" id="analyzingText">__ANALYZING__</span>
+    </div>
+  </div>
+  <div id="resultsSection" style="display:none"><div class="results-grid" id="resultsGrid"></div></div>
+</div>
+<div class="modal-overlay" id="modalOverlay"><div class="modal" id="modalContent"><button class="modal-close" id="modalClose">&times;</button></div></div>
+
+<!-- LevelDB reader -->
+<script>
+(function(){
+const MAGIC=new Uint8Array([0x57,0xfb,0x80,0x8b,0x24,0x75,0x47,0xdb]);
+const FOOTER_SIZE=48;
+function readVarint(b,o){let r=0,s=0,p=o;while(p<b.length){const x=b[p++];r|=(x&0x7f)<<s;if((x&0x80)===0)break;s+=7;if(s>=35)break}return{value:r>>>0,bytesRead:p-o}}
+function readBlockHandle(b,o){const f=readVarint(b,o),z=readVarint(b,o+f.bytesRead);return{offset:f.value,size:z.value,bytesRead:f.bytesRead+z.bytesRead}}
+function readFooter(b){if(b.length<FOOTER_SIZE)throw new Error('File too small');const fs=b.length-FOOTER_SIZE,f=b.subarray(fs);for(let i=0;i<8;i++)if(f[40+i]!==MAGIC[i])throw new Error('Invalid LevelDB magic');const m=readBlockHandle(f,0),x=readBlockHandle(f,m.bytesRead);return{metaindex:m,index:x}}
+function readRawBlock(fd,h){const bs=h.offset,d=fd.subarray(bs,bs+h.size),t=fd[bs+h.size];if(t===0)return d;if(t===2||t===4){try{return pako.inflateRaw(d)}catch{try{return pako.inflate(d)}catch(e){throw new Error('Decomp failed ('+t+')')}}}if(t===3){try{return pako.inflate(d)}catch{try{return pako.inflateRaw(d)}catch(e){throw new Error('Decomp failed (3)')}}}return d}
+function parseBlockEntries(bd){const e=[],v=new DataView(bd.buffer,bd.byteOffset,bd.byteLength),nr=v.getUint32(bd.length-4,true),rs=bd.length-4-(nr*4);let p=0,pk=new Uint8Array(0);while(p<rs){const sh=readVarint(bd,p);p+=sh.bytesRead;const un=readVarint(bd,p);p+=un.bytesRead;const vl=readVarint(bd,p);p+=vl.bytesRead;const kd=bd.subarray(p,p+un.value);p+=un.value;const fk=new Uint8Array(sh.value+un.value);if(sh.value>0)fk.set(pk.subarray(0,sh.value));fk.set(kd,sh.value);const vv=bd.subarray(p,p+vl.value);p+=vl.value;e.push({key:fk,value:new Uint8Array(vv)});pk=fk}return e}
+function parseIndexEntries(id){return parseBlockEntries(id).map(e=>({key:e.key,blockHandle:readBlockHandle(e.value,0)}))}
+function readLdbFile(fd){const f=readFooter(fd),ib=readRawBlock(fd,f.index),ie=parseIndexEntries(ib),ae=[];for(const x of ie){try{const db=readRawBlock(fd,x.blockHandle);ae.push(...parseBlockEntries(db))}catch{}}return ae}
+const LBS=32768,LF=1,L1=2,LM=3,LL=4;
+function readLogFile(fd){const e=[];let p=0,pd=null;while(p+7<=fd.length){const bo=p%LBS;if(bo+7>LBS){p+=LBS-bo;continue}const v=new DataView(fd.buffer,fd.byteOffset+p,7),l=v.getUint16(4,true),t=v.getUint8(6);p+=7;if(l===0&&t===0){p+=LBS-(p%LBS);continue}if(p+l>fd.length)break;const d=fd.subarray(p,p+l);p+=l;if(t===LF)parseLogBatch(d,e);else if(t===L1)pd=new Uint8Array(d);else if(t===LM&&pd){const m=new Uint8Array(pd.length+d.length);m.set(pd);m.set(d,pd.length);pd=m}else if(t===LL&&pd){const m=new Uint8Array(pd.length+d.length);m.set(pd);m.set(d,pd.length);parseLogBatch(m,e);pd=null}}return e}
+function parseLogBatch(bd,e){if(bd.length<12)return;const v=new DataView(bd.buffer,bd.byteOffset,bd.byteLength),c=v.getUint32(8,true);let p=12;for(let i=0;i<c&&p<bd.length;i++){const t=bd[p++],kl=readVarint(bd,p);p+=kl.bytesRead;if(p+kl.value>bd.length)break;const k=bd.subarray(p,p+kl.value);p+=kl.value;if(t===1){const vl=readVarint(bd,p);p+=vl.bytesRead;if(p+vl.value>bd.length)break;const vv=bd.subarray(p,p+vl.value);p+=vl.value;e.push({key:new Uint8Array(k),value:new Uint8Array(vv)})}}}
+function readLevelDB(files){const ae=[];for(const[n,d]of Object.entries(files)){if(n.endsWith('.ldb')||n.endsWith('.sst')){try{ae.push(...readLdbFile(d))}catch(e){}}}for(const[n,d]of Object.entries(files)){if(n.endsWith('.log')){try{ae.push(...readLogFile(d))}catch(e){}}}return ae}
+window.LevelDBReader={readLevelDB,readLdbFile,readLogFile};
+})();
+<\/script>
+<!-- NBT parser (Bedrock little-endian) -->
+<script>
+(function(){
+const TAG={END:0,BYTE:1,SHORT:2,INT:3,LONG:4,FLOAT:5,DOUBLE:6,BYTE_ARRAY:7,STRING:8,LIST:9,COMPOUND:10,INT_ARRAY:11,LONG_ARRAY:12};
+class NBTReader{
+  constructor(b){this.buf=b instanceof Uint8Array?b:new Uint8Array(b);this.view=new DataView(this.buf.buffer,this.buf.byteOffset,this.buf.byteLength);this.pos=0}
+  byte(){return this.view.getInt8(this.pos++)} ubyte(){return this.view.getUint8(this.pos++)}
+  short(){const v=this.view.getInt16(this.pos,true);this.pos+=2;return v}
+  int(){const v=this.view.getInt32(this.pos,true);this.pos+=4;return v}
+  long(){const lo=this.view.getUint32(this.pos,true),hi=this.view.getInt32(this.pos+4,true);this.pos+=8;return[lo,hi]}
+  float(){const v=this.view.getFloat32(this.pos,true);this.pos+=4;return v}
+  double(){const v=this.view.getFloat64(this.pos,true);this.pos+=8;return v}
+  string(){const l=this.view.getUint16(this.pos,true);this.pos+=2;const b=this.buf.subarray(this.pos,this.pos+l);this.pos+=l;return new TextDecoder('utf-8').decode(b)}
+  readTag(t){switch(t){case TAG.BYTE:return this.byte();case TAG.SHORT:return this.short();case TAG.INT:return this.int();case TAG.LONG:return this.long();case TAG.FLOAT:return this.float();case TAG.DOUBLE:return this.double();case TAG.BYTE_ARRAY:{const n=this.int(),a=[];for(let i=0;i<n;i++)a.push(this.byte());return a}case TAG.STRING:return this.string();case TAG.LIST:{const et=this.ubyte(),n=this.int(),a=[];for(let i=0;i<n;i++)a.push(this.readTag(et));return a}case TAG.COMPOUND:return this.readCompound();case TAG.INT_ARRAY:{const n=this.int(),a=[];for(let i=0;i<n;i++)a.push(this.int());return a}case TAG.LONG_ARRAY:{const n=this.int(),a=[];for(let i=0;i<n;i++)a.push(this.long());return a}default:throw new Error('Unknown tag '+t)}}
+  readCompound(){const o={};while(this.pos<this.buf.length){const t=this.ubyte();if(t===TAG.END)break;const n=this.string();o[n]=this.readTag(t)}return o}
+}
+function parseBedrockNBT(d){const b=d instanceof Uint8Array?d:new Uint8Array(d),r=new NBTReader(b),t=r.ubyte();if(t!==TAG.COMPOUND)throw new Error('Expected root compound');r.string();return r.readCompound()}
+function parseLevelDat(d){const b=d instanceof Uint8Array?d:new Uint8Array(d);return parseBedrockNBT(b.subarray(8))}
+window.BedrockNBT={parseBedrockNBT,parseLevelDat};
+})();
+<\/script>
+
+<!-- AST engine for .mkcd code (MakeCode TypeScript -> acorn -> predicates) -->
+<script>
+(function(){
+'use strict';
+const SKIP_KEYS=new Set(['loc','start','end','range','parent','sourceType','raw']);
+function walk(n,v){if(!n||typeof n!=='object')return;if(Array.isArray(n)){for(const c of n)walk(c,v);return}if(typeof n.type==='string')v(n);for(const k of Object.keys(n)){if(SKIP_KEYS.has(k))continue;const x=n[k];if(x&&typeof x==='object')walk(x,v)}}
+function walkAnc(r,v){function rec(n,st){if(!n||typeof n!=='object')return;if(Array.isArray(n)){for(const c of n)rec(c,st);return}if(typeof n.type==='string')v(n,st);const nx=(typeof n.type==='string')?st.concat([n]):st;for(const k of Object.keys(n)){if(SKIP_KEYS.has(k))continue;const x=n[k];if(x&&typeof x==='object')rec(x,nx)}}rec(r,[])}
+function memberName(n){if(!n)return null;if(n.type==='Identifier')return n.name;if(n.type==='MemberExpression'){const o=memberName(n.object),p=n.computed?null:(n.property&&n.property.name);if(!o||!p)return null;return o+'.'+p}return null}
+function callName(c){return(c&&c.type==='CallExpression')?memberName(c.callee):null}
+function identName(n){return n&&n.type==='Identifier'?n.name:null}
+function literalValue(n){if(!n)return undefined;if(n.type==='Literal')return n.value;if(n.type==='TemplateLiteral'&&n.expressions.length===0)return n.quasis.map(q=>q.value.cooked).join('');if(n.type==='UnaryExpression'&&n.operator==='-'&&n.argument.type==='Literal')return -n.argument.value;return undefined}
+function staticIter(f){if(f.type!=='ForStatement')return null;const i=f.init,t=f.test,u=f.update;if(!i||!t||!u)return null;let sv=null,vn=null;if(i.type==='VariableDeclaration'&&i.declarations.length===1){const d=i.declarations[0];if(d.id&&d.id.type==='Identifier'&&d.init){vn=d.id.name;const v=literalValue(d.init);if(typeof v==='number')sv=v}}if(vn==null||sv==null)return null;if(t.type!=='BinaryExpression')return null;if(!(t.operator==='<'||t.operator==='<='))return null;if(!(t.left&&t.left.type==='Identifier'&&t.left.name===vn))return null;const ev=literalValue(t.right);if(typeof ev!=='number')return null;let st=null;if(u.type==='UpdateExpression'&&u.operator==='++')st=1;else if(u.type==='AssignmentExpression'&&u.operator==='+='&&literalValue(u.right)===1)st=1;if(st!==1)return null;const it=(t.operator==='<')?(ev-sv):(ev-sv+1);return Math.max(0,it|0)}
+
+function createEngine(src,meta){
+  let ast=null,err=null;
+  try{ast=acorn.parse(src,{ecmaVersion:'latest',sourceType:'script',locations:true,allowReturnOutsideFunction:true,allowAwaitOutsideFunction:true})}catch(e){err=e}
+  const loops=[],chats=[],ids=new Set();
+  if(ast){walk(ast,n=>{
+    if(n.type==='CallExpression'){const cn=callName(n);if(cn==='player.onChat'&&n.arguments.length>=2){const c=literalValue(n.arguments[0]),f=n.arguments[1];if(typeof c==='string'&&f&&(f.type==='FunctionExpression'||f.type==='ArrowFunctionExpression'))chats.push({name:c,body:f.body,node:n})}}
+    if(n.type==='ForStatement'||n.type==='WhileStatement'||n.type==='DoWhileStatement'||n.type==='ForOfStatement'||n.type==='ForInStatement')loops.push(n);
+    if(n.type==='Identifier')ids.add(n.name);
+  })}
+  function callsByName(name){const o=[];if(!ast)return o;walk(ast,n=>{if(n.type==='CallExpression'&&callName(n)===name)o.push(n)});return o}
+  function loopDepth(n,d){let m=d;walk(n,c=>{if(c===n)return;if(c.type==='ForStatement'||c.type==='WhileStatement'||c.type==='DoWhileStatement'){const i=loopDepth(c,d+1);if(i>m)m=i}});return m}
+  return {
+    parsed:!!ast, parseError:err, source:src, meta:meta||{}, ast,
+    walk, callName, memberName, literalValue, identName,
+    hasChatCommand:n=>chats.some(h=>h.name===n),
+    chatCommandNames:()=>chats.map(h=>h.name),
+    chatHandler:n=>chats.find(h=>h.name===n)||null,
+    callsByName,
+    countCalls:n=>callsByName(n).length,
+    hasAnyLoop:()=>loops.length>0,
+    loopCount:()=>loops.length,
+    maxLoopDepth:()=>{let m=0;for(const l of loops){const d=1+loopDepth(l,0);if(d>m)m=d}return m},
+    hasLoopWithCalls:(req)=>{for(const l of loops){const inside=new Set();walk(l,n=>{if(n.type==='CallExpression'){const c=callName(n);if(c)inside.add(c)}});if(req.every(c=>inside.has(c)))return true}return false},
+    totalAgentForward:()=>{let t=0;walkAnc(ast,(n,st)=>{if(n.type!=='CallExpression'||callName(n)!=='agent.move')return;const d=identName(n.arguments[0]),v=literalValue(n.arguments[1]);if(d!=='FORWARD'||typeof v!=='number')return;let m=1;for(const a of st)if(a.type==='ForStatement'){const k=staticIter(a);if(k!=null)m*=k}t+=v*m});return t},
+    callsSetItemMatching:(b)=>{const re=b instanceof RegExp?b:null;for(const c of callsByName('agent.setItem')){const id=identName(c.arguments[0]);if(!id)continue;if(re?re.test(id):id===b)return true}return false},
+    setItemBlocks:()=>callsByName('agent.setItem').map(c=>identName(c.arguments[0])).filter(Boolean),
+    setsAssist:(f,v)=>{for(const c of callsByName('agent.setAssist')){const fn=identName(c.arguments[0]),vv=literalValue(c.arguments[1]);if(fn===f&&(v===undefined||vv===v))return true}return false},
+    spawnsMob:(m)=>{const re=m instanceof RegExp?m:null;for(const c of callsByName('mobs.spawn')){const x=identName(c.arguments[0]);if(!x)continue;if(re?re.test(x):x===m)return true}return false},
+    usesIdentifier:(n)=>ids.has(n),
+    hasIfStatement:()=>{let h=false;if(ast)walk(ast,n=>{if(n.type==='IfStatement')h=true});return h},
+    lineCount:()=>(src||'').split(/\r?\n/).length,
+    sourceContains:(s)=>(src||'').indexOf(s)>=0,
+  };
+}
+
+async function decompressMkcd(uint8){
+  return new Promise((res,rej)=>{try{LZMA.decompress(uint8,(r,e)=>{if(e)return rej(e);if(typeof r==='string')return res(r);try{res(new TextDecoder('utf-8').decode(new Uint8Array(r)))}catch(x){rej(x)}})}catch(e){rej(e)}});
+}
+
+window.MkcdEngine = { createEngine, decompressMkcd };
+})();
+<\/script>
+
+<!-- Embedded config, registry & UI strings -->
+<script>
+const LESSON_CONFIG = __LESSON_CONFIG__;
+const UI = __UI_STRINGS__;
+const CHECK_REGISTRY = {};
+__REGISTRY_SRC__
+<\/script>
+
+<!-- Checker runtime -->
+<script>
+(function(){
+'use strict';
+let results=[],isProcessing=false;
+const sessionState={world:null,code:null,worldFile:null,codeFile:null};
+const spinnerWrap=document.getElementById('spinnerWrap'),errorMsg=document.getElementById('errorMsg'),resultsSection=document.getElementById('resultsSection'),resultsGrid=document.getElementById('resultsGrid'),modalOverlay=document.getElementById('modalOverlay'),modalContent=document.getElementById('modalContent');
+const slotWorld=document.getElementById('slotWorld'),slotCode=document.getElementById('slotCode');
+const slotWorldStatus=document.getElementById('slotWorldStatus'),slotCodeStatus=document.getElementById('slotCodeStatus');
+const reqBanner=document.getElementById('reqBanner'),reqLabel=document.getElementById('reqLabel'),reqBadges=document.getElementById('reqBadges');
+
+document.getElementById('analyzingText').textContent=UI.analyzing;
+
+function showError(m){errorMsg.textContent=m;errorMsg.style.display='block'}
+function hideError(){errorMsg.style.display='none'}
+function formatSize(n){return n<1024?n+' B':n<1024*1024?(n/1024).toFixed(1)+' KB':(n/1024/1024).toFixed(2)+' MB'}
+function detectKind(f){const n=(f&&f.name||'').toLowerCase();if(n.endsWith('.mcworld'))return 'world';if(n.endsWith('.mkcd'))return 'code';return null}
+
+// Compute which slots this lesson needs (derived from CHECK_REGISTRY targets).
+function neededTargets(){
+  const s=new Set();
+  for(const c of LESSON_CONFIG.checks){const def=CHECK_REGISTRY[c.type];if(def)s.add(def.target||'world')}
+  if(!s.size)s.add('world');
+  return s;
+}
+
+function setupSlots(){
+  const need=neededTargets();
+  const grid=document.getElementById('dropGrid');
+  slotWorld.style.display=need.has('world')?'flex':'none';
+  slotCode.style.display=need.has('code')?'flex':'none';
+  grid.classList.toggle('dual',need.size===2);
+  // Requirements banner
+  if(need.size===2){
+    reqBanner.style.display='flex';
+    reqLabel.textContent=UI.needsBoth||'Esta lección requiere dos archivos:';
+    reqBadges.innerHTML='<span class="req-badge">🌍 .mcworld</span><span class="req-badge">💻 .mkcd</span>';
+  } else if(need.has('code')){
+    reqBanner.style.display='flex';
+    reqLabel.textContent=UI.needsCodeOnly||'Esta lección revisa solo el código:';
+    reqBadges.innerHTML='<span class="req-badge">💻 .mkcd</span>';
+  } else {
+    reqBanner.style.display='none';
+  }
+}
+
+function setSlotStatus(target,state,fileNameOrError){
+  const slot=target==='world'?slotWorld:slotCode;
+  const status=target==='world'?slotWorldStatus:slotCodeStatus;
+  const clearBtn=slot.querySelector('.slot-clear');
+  slot.classList.remove('loaded','error');
+  if(state==='loaded'){
+    slot.classList.add('loaded');
+    status.textContent='✓ '+fileNameOrError;
+    clearBtn.hidden=false;
+  } else if(state==='error'){
+    slot.classList.add('error');
+    status.textContent='⚠ '+fileNameOrError;
+    clearBtn.hidden=true;
+  } else {
+    status.textContent=target==='world'?(UI.slotWorldEmpty||UI.drop):(UI.slotCodeEmpty||UI.drop);
+    clearBtn.hidden=true;
+  }
+}
+
+function clearSlot(target){
+  if(target==='world'){sessionState.world=null;sessionState.worldFile=null}
+  else{sessionState.code=null;sessionState.codeFile=null}
+  setSlotStatus(target,'empty');
+  results=[];renderResults();
+}
+
+// Wire each slot
+for(const slot of [slotWorld,slotCode]){
+  const target=slot.dataset.target;
+  const input=slot.querySelector('input[type=file]');
+  const clearBtn=slot.querySelector('.slot-clear');
+  input.addEventListener('change',e=>{const f=e.target.files[0];if(f)handleSlotFile(target,f);input.value=''});
+  slot.addEventListener('dragover',e=>{e.preventDefault();slot.classList.add('dragover')});
+  slot.addEventListener('dragleave',()=>slot.classList.remove('dragover'));
+  slot.addEventListener('drop',e=>{e.preventDefault();slot.classList.remove('dragover');const f=e.dataTransfer.files[0];if(f){const k=detectKind(f);if(k&&k!==target){const other=k==='world'?slotWorld:slotCode;if(other.style.display!=='none'){handleSlotFile(k,f);return}}handleSlotFile(target,f)}});
+  clearBtn.addEventListener('click',e=>{e.stopPropagation();clearSlot(target)});
+}
+
+async function handleSlotFile(target,file){
+  if(isProcessing)return;
+  const k=detectKind(file);
+  if(!k){setSlotStatus(target,'error',UI.invalidFile);return}
+  if(k!==target){setSlotStatus(target,'error',UI.wrongSlot||UI.invalidFile);return}
+  hideError();
+  await runChecks([{target,file}]);
+}
+
+function renderMcText(t){if(!t)return '';const parts=t.split(/(§[0-9a-fk-or])/gi);let h='',b=false,i=false,o=false,c=null;for(const p of parts){if(/^§([0-9a-f])$/i.test(p)){c=p[1].toLowerCase();continue}if(/^§l$/i.test(p)){b=true;continue}if(/^§o$/i.test(p)){i=true;continue}if(/^§k$/i.test(p)){o=true;continue}if(/^§r$/i.test(p)){b=i=o=false;c=null;continue}if(/^§[mn]$/i.test(p))continue;if(!p.length)continue;const cls=[];if(c)cls.push('mc-'+c);if(b)cls.push('mc-bold');if(i)cls.push('mc-italic');if(o)cls.push('mc-obfuscated');const e=p.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');h+=cls.length?'<span class="'+cls.join(' ')+'">'+e+'</span>':e}return h}
+
+async function parseMcworld(file){
+  const zip=await JSZip.loadAsync(file);
+  let root='';
+  for(const p of Object.keys(zip.files)){const l=p.toLowerCase();if(l.endsWith('level.dat')&&!l.includes('__macosx')){root=p.substring(0,p.length-'level.dat'.length);break}}
+  const result={metadata:null,npcs:[],thumbnail:null,allEntities:[],signs:[]};
+  const ldf=zip.file(root+'level.dat');
+  if(ldf){try{const d=await ldf.async('uint8array');result.metadata=window.BedrockNBT.parseLevelDat(d)}catch(e){}}
+  for(const s of['world_icon.jpeg','world_icon.jpg','world_icon.png']){const f=zip.file(root+s);if(f){try{const b=await f.async('blob');result.thumbnail=URL.createObjectURL(b)}catch{}break}}
+  const dbp=root+'db/',dbf={};
+  for(const[p,e]of Object.entries(zip.files)){if(p.startsWith(dbp)&&!e.dir){const n=p.substring(dbp.length);if(n.endsWith('.ldb')||n.endsWith('.sst')||n.endsWith('.log')){try{dbf[n]=await e.async('uint8array')}catch{}}}}
+  if(Object.keys(dbf).length){
+    try{
+      const entries=window.LevelDBReader.readLevelDB(dbf);
+      for(const en of entries){
+        try{
+          if(en.value.length<=2)continue;
+          const nbt=window.BedrockNBT.parseBedrockNBT(en.value);
+          if(nbt&&typeof nbt.identifier==='string'){
+            const e={identifier:nbt.identifier,RawtextName:nbt.RawtextName||nbt.CustomName||'',CustomName:nbt.CustomName||'',InterativeText:nbt.InterativeText||nbt.InteractiveText||'',Actions:nbt.Actions||'',Variant:nbt.Variant!=null?nbt.Variant:null,Pos:nbt.Pos||null};
+            result.allEntities.push(e);
+            if(e.identifier==='minecraft:npc')result.npcs.push(e);
+          } else if(nbt&&typeof nbt.id==='string'&&(nbt.id==='Sign'||nbt.id==='minecraft:sign')){
+            const fulltext=[nbt.FrontText&&nbt.FrontText.Text,nbt.BackText&&nbt.BackText.Text,nbt.Text,nbt.Text1,nbt.Text2,nbt.Text3,nbt.Text4].filter(Boolean).join('\n');
+            result.signs.push({text:fulltext,x:nbt.x,y:nbt.y,z:nbt.z});
+          }
+        }catch{}
+      }
+    }catch(e){}
+  }
+  return result;
+}
+
+async function parseMkcd(file){
+  const buf=new Uint8Array(await file.arrayBuffer());
+  const text=await window.MkcdEngine.decompressMkcd(buf);
+  const wrapper=JSON.parse(text);
+  const source=JSON.parse(wrapper.source);
+  const main=source['main.ts']||'';
+  return window.MkcdEngine.createEngine(main,{name:wrapper.meta&&wrapper.meta.name||'',files:Object.keys(source),pxt:source['pxt.json']?JSON.parse(source['pxt.json']):null});
+}
+
+function evalCheck(check,state){
+  const def=CHECK_REGISTRY[check.type];
+  if(!def||typeof def.evaluator!=='function')return {passed:false,missing:'unknown'};
+  const target=def.target||'world';
+  const data=target==='code'?state.code:state.world;
+  if(!data)return {passed:false,missing:target};
+  try{return {passed:!!def.evaluator(data,check.params||{})}}catch(e){return {passed:false,error:e.message}}
+}
+
+async function runChecks(uploads){
+  if(isProcessing)return;isProcessing=true;hideError();spinnerWrap.style.display='block';
+  try{
+    for(const up of uploads){
+      try{
+        if(up.target==='world'){
+          sessionState.world=await parseMcworld(up.file);
+          sessionState.worldFile=up.file;
+          setSlotStatus('world','loaded',up.file.name+' ('+formatSize(up.file.size)+')');
+        } else if(up.target==='code'){
+          sessionState.code=await parseMkcd(up.file);
+          sessionState.codeFile=up.file;
+          setSlotStatus('code','loaded',up.file.name+' ('+formatSize(up.file.size)+')');
+        }
+      } catch(e){
+        setSlotStatus(up.target,'error',e.message||'parse error');
+      }
+    }
+
+    // Wait until every required target is loaded before scoring (or score partial if user wants)
+    const need=neededTargets();
+    const haveAll=Array.from(need).every(t=>t==='world'?sessionState.world:sessionState.code);
+
+    const checks={},details={};
+    for(const c of LESSON_CONFIG.checks){const r=evalCheck(c,sessionState);checks[c.id]=r.passed;details[c.id]=r}
+    const total=LESSON_CONFIG.checks.length;
+    const score=LESSON_CONFIG.checks.filter(c=>checks[c.id]).length;
+    const entry={id:Date.now()+'-'+Math.random().toString(36).substr(2,6),studentName:UI.student,checks,details,worldData:sessionState.world,codeData:sessionState.code,worldFile:sessionState.worldFile,codeFile:sessionState.codeFile,score,total,partial:!haveAll,timestamp:new Date()};
+    results=[entry];renderResults();
+
+    // Only push to LMS once all required files are present
+    if(haveAll){
+      try{
+        const wn=(sessionState.world&&sessionState.world.metadata&&sessionState.world.metadata.LevelName)||'';
+        const cn=(sessionState.code&&sessionState.code.meta&&sessionState.code.meta.name)||'';
+        window.parent.postMessage({type:'level-save-status',data:{isPassed:score===total,status:score===total?'complete':'attempted'}},'*');
+        window.parent.postMessage({type:'level-save-state',data:JSON.stringify({score,total,lessonId:LESSON_CONFIG.id,worldName:wn,codeName:cn})},'*');
+      }catch{}
+    }
+  }catch(e){console.error(e);showError(UI.errorPrefix+' '+e.message)}
+  finally{isProcessing=false;spinnerWrap.style.display='none'}
+}
+
+function renderResults(){
+  if(!results.length){resultsSection.style.display='none';return}
+  resultsSection.style.display='block';resultsGrid.innerHTML='';
+  for(const r of results){
+    const card=document.createElement('div');card.className='card';card.onclick=()=>showModal(r);
+    let th;
+    if(r.worldData&&r.worldData.thumbnail)th='<img src="'+r.worldData.thumbnail+'" alt="">';
+    else if(r.codeData)th='<span style="color:var(--dim);font-size:1.4rem">💻</span>';
+    else th='<span style="color:var(--dim)">🌍</span>';
+    const dots=LESSON_CONFIG.checks.map(c=>'<span class="dot '+(r.checks[c.id]?'pass':'fail')+'" title="'+esc(c.label)+'"></span>').join('');
+    card.innerHTML='<div class="card-thumb">'+th+'</div><div class="card-body"><div class="card-name">'+esc(r.studentName)+'</div><div class="card-lesson">'+esc(LESSON_CONFIG.id)+'</div><div class="card-dots">'+dots+'</div><div class="card-score">'+r.score+'/'+r.total+' '+esc(UI.criteria)+'</div></div>';
+    resultsGrid.appendChild(card);
+  }
+}
+
+function showModal(r){
+  const m=r.worldData?r.worldData.metadata:null;
+  let h='<button class="modal-close" onclick="document.getElementById(\'modalOverlay\').classList.remove(\'active\')">&times;</button>';
+  if(r.worldData&&r.worldData.thumbnail)h+='<img class="modal-thumb" src="'+r.worldData.thumbnail+'" alt="">';
+  h+='<h2>'+esc(r.studentName)+'</h2><div class="lesson-tag">'+esc(LESSON_CONFIG.name)+' — '+r.score+'/'+r.total+'</div>';
+  if(m){
+    h+='<div class="modal-section"><h3>'+esc(UI.worldInfo)+'</h3><div class="meta-grid">';
+    h+=mrow(UI.metaName,m.LevelName||UI.empty);
+    h+=mrow(UI.metaGamemode,UI.gamemodes[m.GameType]||'?');
+    h+=mrow(UI.metaDifficulty,UI.difficulties[m.Difficulty]||(m.Difficulty!=null?m.Difficulty:'?'));
+    let sd='?',s=m.RandomSeed;if(Array.isArray(s))sd=s[0]+(s[1]!==0?' (hi:'+s[1]+')':'');else if(s!=null)sd=String(s);
+    h+=mrow(UI.metaSeed,sd);h+=mrow(UI.metaEducation,m.educationFeaturesEnabled?UI.yes:UI.no);
+    h+='</div></div>';
+  }
+  if(r.codeData){
+    const cd=r.codeData;
+    h+='<div class="modal-section"><h3>'+esc(UI.codeInfo||'Code')+'</h3><div class="meta-grid">';
+    h+=mrow(UI.codeName||'Project',cd.meta&&cd.meta.name||UI.empty);
+    h+=mrow(UI.codeLines||'Lines',cd.lineCount());
+    h+=mrow(UI.codeChats||'Chat commands',cd.chatCommandNames().join(', ')||UI.empty);
+    h+=mrow(UI.codeLoops||'Loops',cd.loopCount()+' (depth '+cd.maxLoopDepth()+')');
+    h+=mrow(UI.codeParse||'Parse',cd.parsed?(UI.yes||'Yes'):'⚠ '+(cd.parseError&&cd.parseError.message||'fail'));
+    h+='</div></div>';
+  }
+  h+='<div class="modal-section"><h3>'+esc(UI.checklist)+'</h3>';
+  for(const c of LESSON_CONFIG.checks){
+    const p=r.checks[c.id];
+    const det=r.details&&r.details[c.id];
+    let extra='';
+    if(!p&&det&&det.missing==='world')extra='<div class="hint" style="color:var(--yellow)">⚠ '+(UI.needWorld||'Upload .mcworld')+'</div>';
+    else if(!p&&det&&det.missing==='code')extra='<div class="hint" style="color:var(--yellow)">⚠ '+(UI.needCode||'Upload .mkcd')+'</div>';
+    else if(!p&&det&&det.error)extra='<div class="hint" style="color:var(--red)">⚠ '+esc(det.error)+'</div>';
+    h+='<div class="checklist-item"><span class="check-icon '+(p?'pass':'fail')+'">'+(p?'✓':'✗')+'</span><div><div>'+esc(c.label)+'</div>'+(c.hint?'<div class="hint">'+esc(c.hint)+'</div>':'')+extra+'</div></div>';
+  }
+  h+='</div>';
+  if(r.worldData&&r.worldData.npcs.length){
+    h+='<div class="modal-section"><h3>'+esc(UI.npcs)+' ('+r.worldData.npcs.length+')</h3>';
+    for(const n of r.worldData.npcs){
+      const nm=n.RawtextName||n.CustomName||UI.noname;
+      const pos=n.Pos?n.Pos.map(p=>typeof p==='number'?p.toFixed(1):p).join(', '):'?';
+      h+='<div class="npc-card"><div class="npc-name">'+renderMcText(nm)+'</div><div class="npc-pos">'+esc(UI.pos)+': '+esc(pos)+(n.Variant!=null?' | '+esc(UI.skin)+': '+n.Variant:'')+'</div>';
+      if(n.InterativeText)h+='<div class="npc-dialogue">'+renderMcText(n.InterativeText)+'</div>';
+      if(n.Actions){try{const a=JSON.parse(n.Actions);if(Array.isArray(a)&&a.length){h+='<div class="npc-buttons">';for(const x of a){h+='<span class="npc-btn-tag" title="'+esc(x.text||x.data||'')+'">'+esc(x.button_name||UI.button)+'</span>'}h+='</div>'}}catch{}}
+      h+='</div>';
+    }
+    h+='</div>';
+  }
+  if(r.worldData&&r.worldData.allEntities.length){
+    const ec={};for(const e of r.worldData.allEntities){ec[e.identifier]=(ec[e.identifier]||0)+1}
+    h+='<div class="modal-section"><h3>'+esc(UI.entities)+' ('+r.worldData.allEntities.length+')</h3><div style="font-size:.83rem;color:var(--dim)">'+Object.entries(ec).sort((a,b)=>b[1]-a[1]).map(([i,c])=>esc(i.replace('minecraft:',''))+': '+c).join(' · ')+'</div></div>';
+  }
+  if(r.codeData&&r.codeData.source){
+    const src=r.codeData.source;
+    const truncated=src.length>2000?src.substring(0,2000)+'\n…':src;
+    h+='<div class="modal-section"><h3>'+esc(UI.codeSource||'main.ts')+'</h3><pre style="background:#0f1422;border-radius:8px;padding:12px;font-family:Consolas,monospace;font-size:.78rem;color:#cbd;max-height:240px;overflow:auto;white-space:pre">'+esc(truncated)+'</pre></div>';
+  }
+  modalContent.innerHTML=h;modalOverlay.classList.add('active');
+}
+function mrow(l,v){return '<div class="meta-item"><span>'+esc(l)+':</span> '+esc(String(v))+'</div>'}
+function esc(s){if(s==null)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+modalOverlay.addEventListener('click',e=>{if(e.target===modalOverlay)modalOverlay.classList.remove('active')});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')modalOverlay.classList.remove('active')});
+
+// Init: render slots based on lesson requirements
+setupSlots();
+setSlotStatus('world','empty');
+setSlotStatus('code','empty');
+
+try{window.parent.postMessage({type:'request-level-state'},'*')}catch{}
+})();
+<\/script>
+</body>
+</html></script>
+
+<!-- ============================================================ -->
+<!-- I18N                                                          -->
+<!-- ============================================================ -->
+<script>
+'use strict';
+
+const I18N = {
+  es: {
+    'app.title': '🧪 Constructor de revisores (mundo + código)',
+    'app.subtitle': 'Configura criterios para .mcworld y/o .mkcd (Code Builder) y exporta un ZIP listo para FrameBox.',
+    'btn.tour': 'Tour',
+    'btn.help': 'Guía',
+    'btn.presets': '📋 Presets',
+    'btn.loadJson': '📥 Cargar JSON',
+    'btn.saveJson': '💾 Guardar JSON',
+    'btn.exportZip': '📦 Exportar ZIP',
+    'help.title': '📋 Guía rápida del verificador',
+    'help.print': 'Imprimir',
+    'help.close': 'Cerrar',
+    'help.section.recipes': '📝 Qué usar para qué lección',
+    'help.section.files': '🗂 Qué archivo verifica qué',
+    'help.section.all': '📚 Todas las verificaciones',
+    'help.recipe.world': 'Crear y configurar mundo',
+    'help.recipe.world.tag': 'M1L1, M1L4',
+    'help.recipe.npc': 'NPCs y diálogos',
+    'help.recipe.npc.tag': 'M1L2, M1L5',
+    'help.recipe.structure': 'Construir estructura (torre, casa)',
+    'help.recipe.structure.tag': 'M1L3',
+    'help.recipe.code': 'Código del agente (bucles)',
+    'help.recipe.code.tag': 'M2L1-L3',
+    'help.recipe.hybrid': 'Mundo + código (híbrido)',
+    'help.recipe.hybrid.tag': 'M2L1+',
+    'help.file.world.title': 'Archivo del mundo',
+    'help.file.world.desc': 'mundo, NPCs, entidades, letreros, configuración del mundo',
+    'help.file.code.title': 'Proyecto Code Builder',
+    'help.file.code.desc': 'código TypeScript, comandos de chat, bucles, llamadas API',
+    'help.file.checks': '{n} verificaciones',
+    'btn.clearAll': 'Vaciar todo',
+    'btn.add': '+ Añadir',
+    'field.lessonId': 'ID de la lección',
+    'field.lessonId.help': 'Identificador único, ej: M1L3. Se usa para guardar el estado del estudiante.',
+    'field.lessonName': 'Nombre de la lección',
+    'field.lessonName.placeholder': 'Ej: NPCs y diálogos',
+    'field.lessonName.default': 'Nueva lección',
+    'field.lessonIntro': 'Instrucción para el estudiante',
+    'field.lessonIntro.help': 'Texto breve que aparecerá encima del área de carga.',
+    'field.lessonIntro.default': 'Sube tu mundo para verificar',
+    'catalog.title': '📚 Catálogo de verificaciones',
+    'catalog.hint': 'Haz clic en cualquier ítem para añadirlo a la lección. Luego configura sus parámetros a la derecha.',
+    'builder.title': '🎯 Criterios de la lección',
+    'builder.empty.title': 'Aún no hay criterios.',
+    'builder.empty.hint': 'Elige alguno del catálogo a la izquierda.',
+    'builder.studentLabel': 'Texto que verá el estudiante (etiqueta del criterio)',
+    'builder.studentHint': 'Pista para el estudiante (opcional)',
+    'builder.emptyDefault': 'Si lo dejas vacío, se usará:',
+    'builder.noParams': 'Sin parámetros.',
+    'preview.title': '👁️ Vista previa (lo que verá el estudiante)',
+    'preview.empty': 'Añade criterios para ver la vista previa.',
+    'preview.req.world': 'Esta lección requiere:',
+    'preview.req.code': 'Esta lección requiere solo código:',
+    'preview.req.both': 'Esta lección requiere DOS archivos:',
+    'section.world.title': 'Revisar el mundo',
+    'section.code.title':  'Revisar el código',
+    'cat.world': 'Mundo',
+    'cat.npc': 'NPCs y diálogos',
+    'cat.entity': 'Entidades (mobs)',
+    'cat.sign': 'Letreros',
+    'cat.code': 'Código del estudiante (.mkcd)',
+    'toast.zipOk': 'ZIP generado ✔',
+    'toast.jsonOk': 'JSON guardado ✔',
+    'toast.loaded': 'Configuración cargada ✔',
+    'toast.empty': 'Añade al menos un criterio',
+    'toast.presetNotFound': 'Preset no encontrado',
+    'toast.presetLoaded': 'Preset "{name}" cargado',
+    'toast.exportError': 'Error al exportar: ',
+    'toast.importError': 'Error: ',
+    'toast.invalidFormat': 'Formato inválido: falta checks[]',
+    'toast.unknownTypes': 'Avisos: {n} check(s) con tipo desconocido',
+    'confirm.overwrite': '¿Sobrescribir la lección actual?',
+    'confirm.deleteAll': '¿Eliminar todos los criterios?',
+    'prompt.preset': 'Cargar preset (sobrescribe lo actual). Opciones:\n{options}\n\nEscribe el ID:',
+    // TOUR
+    'tour.next': 'Siguiente →',
+    'tour.prev': '← Atrás',
+    'tour.skip': 'Saltar',
+    'tour.finish': 'Listo ✓',
+    'tour.counter': 'Paso {n} de {total}',
+    'tour.s1.title': '👋 ¡Bienvenido al Constructor!',
+    'tour.s1.body': 'Aquí construyes el ZIP del verificador automático para tus lecciones de Minecraft. El estudiante subirá su mundo y la herramienta comprobará si cumple los criterios que tú definas. Sigamos paso a paso (puedes saltar cuando quieras).',
+    'tour.s2.title': 'Paso 1: ID de la lección',
+    'tour.s2.body': 'Escribe un identificador único (por ej. M1L3, M2L1). Se usa como nombre del archivo ZIP y guarda el progreso del estudiante. Debe coincidir con la codificación del urok en LMS.',
+    'tour.s3.title': 'Paso 2: Nombre de la lección',
+    'tour.s3.body': 'Título visible para el estudiante en la cabecera del verificador. Por ejemplo: "La Torre de Vigilancia" o "Crea tu experiencia jugable".',
+    'tour.s4.title': 'Paso 3: Instrucción',
+    'tour.s4.body': 'Texto corto que verá el estudiante encima del área de carga. Por ejemplo: "Sube tu mundo .mcworld para verificar la Torre".',
+    'tour.s5.title': 'Paso 4: Catálogo de verificaciones',
+    'tour.s5.body': 'Aquí están todas las comprobaciones disponibles, agrupadas por categoría (Mundo, NPCs, Entidades, Letreros). Haz clic en cualquier ítem para añadirlo a tu lección.',
+    'tour.s6.title': 'Paso 5: Criterios de tu lección',
+    'tour.s6.body': 'Aquí aparecen los criterios que has añadido. Haz clic en cualquier tarjeta para configurar parámetros (ej. cantidad mínima de NPCs) y, si quieres, personalizar el texto y la pista que verá el estudiante.',
+    'tour.s7.title': 'Paso 6: Vista previa',
+    'tour.s7.body': 'Aquí ves cómo aparecerán los criterios para el estudiante. Si algún texto suena raro, vuelve a la tarjeta correspondiente y edítalo.',
+    'tour.s8.title': 'Paso 7: Presets',
+    'tour.s8.body': 'Plantillas listas para los uroks del módulo (M1L1, M1L2, M1L3, M1L5). Te ahorran tiempo: cargas la base y luego ajustas. Cuidado: sobrescriben los criterios actuales.',
+    'tour.s9.title': 'Paso 8: Cargar / Guardar JSON',
+    'tour.s9.body': 'Guarda tu configuración como JSON para volver a ella después o compartirla. Cargar JSON restaura una configuración guardada anteriormente.',
+    'tour.s10.title': 'Paso 9: Exportar ZIP',
+    'tour.s10.body': 'Botón principal: genera el archivo {ID}_checker.zip listo para subir a un nivel FrameBox en LMS. ¡Eso es todo!',
+    'tour.s11.title': '🚀 Subir a LMS',
+    'tour.s11.body': 'En LMS: crea un Level → tipo FrameBox → pestaña FrameBox → Upload ZIP → selecciona tu archivo. Luego enlaza el level al Task correspondiente y listo. ¡Buen trabajo!'
+  },
+  ru: {
+    'app.title': '🧪 Конструктор проверок (мир + код)',
+    'app.subtitle': 'Настрой критерии для .mcworld и/или .mkcd (Code Builder) и экспортируй ZIP во FrameBox.',
+    'btn.tour': 'Тур',
+    'btn.help': 'Справочник',
+    'btn.presets': '📋 Пресеты',
+    'btn.loadJson': '📥 Загрузить JSON',
+    'btn.saveJson': '💾 Сохранить JSON',
+    'btn.exportZip': '📦 Экспорт ZIP',
+    'help.title': '📋 Шпаргалка по проверкам',
+    'help.print': 'Печать',
+    'help.close': 'Закрыть',
+    'help.section.recipes': '📝 Что использовать для какого урока',
+    'help.section.files': '🗂 Какой файл что проверяет',
+    'help.section.all': '📚 Все проверки',
+    'help.recipe.world': 'Создание и настройка мира',
+    'help.recipe.world.tag': 'M1L1, M1L4',
+    'help.recipe.npc': 'NPC и диалоги',
+    'help.recipe.npc.tag': 'M1L2, M1L5',
+    'help.recipe.structure': 'Строительство (башня, дом)',
+    'help.recipe.structure.tag': 'M1L3',
+    'help.recipe.code': 'Код агента (циклы)',
+    'help.recipe.code.tag': 'M2L1-L3',
+    'help.recipe.hybrid': 'Мир + код (гибрид)',
+    'help.recipe.hybrid.tag': 'M2L1+',
+    'help.file.world.title': 'Файл мира',
+    'help.file.world.desc': 'мир, NPC, сущности, таблички, настройки мира',
+    'help.file.code.title': 'Проект Code Builder',
+    'help.file.code.desc': 'код TypeScript, команды чата, циклы, API-вызовы',
+    'help.file.checks': '{n} проверок',
+    'btn.clearAll': 'Очистить всё',
+    'btn.add': '+ Добавить',
+    'field.lessonId': 'ID урока',
+    'field.lessonId.help': 'Уникальный идентификатор (например, M1L3). Используется для сохранения прогресса ученика.',
+    'field.lessonName': 'Название урока',
+    'field.lessonName.placeholder': 'Например: NPC и диалоги',
+    'field.lessonName.default': 'Новый урок',
+    'field.lessonIntro': 'Инструкция для ученика',
+    'field.lessonIntro.help': 'Короткий текст над зоной загрузки файла.',
+    'field.lessonIntro.default': 'Загрузи свой мир для проверки',
+    'catalog.title': '📚 Каталог проверок',
+    'catalog.hint': 'Нажми на любой пункт, чтобы добавить его в урок. Затем настрой параметры справа.',
+    'builder.title': '🎯 Критерии урока',
+    'builder.empty.title': 'Пока нет критериев.',
+    'builder.empty.hint': 'Выбери что-нибудь из каталога слева.',
+    'builder.studentLabel': 'Текст, который увидит ученик (название критерия)',
+    'builder.studentHint': 'Подсказка для ученика (необязательно)',
+    'builder.emptyDefault': 'Если оставить пустым, будет:',
+    'builder.noParams': 'Без параметров.',
+    'preview.title': '👁️ Предпросмотр (что увидит ученик)',
+    'preview.empty': 'Добавь критерии, чтобы увидеть предпросмотр.',
+    'preview.req.world': 'Для урока нужен:',
+    'preview.req.code': 'Урок проверяет только код:',
+    'preview.req.both': 'Для урока нужны ДВА файла:',
+    'section.world.title': 'Проверка мира',
+    'section.code.title':  'Проверка кода',
+    'cat.world': 'Мир',
+    'cat.npc': 'NPC и диалоги',
+    'cat.entity': 'Сущности (мобы)',
+    'cat.sign': 'Таблички',
+    'cat.code': 'Код ученика (.mkcd)',
+    'toast.zipOk': 'ZIP создан ✔',
+    'toast.jsonOk': 'JSON сохранён ✔',
+    'toast.loaded': 'Конфигурация загружена ✔',
+    'toast.empty': 'Добавь хотя бы один критерий',
+    'toast.presetNotFound': 'Пресет не найден',
+    'toast.presetLoaded': 'Пресет "{name}" загружен',
+    'toast.exportError': 'Ошибка экспорта: ',
+    'toast.importError': 'Ошибка: ',
+    'toast.invalidFormat': 'Неверный формат: отсутствует checks[]',
+    'toast.unknownTypes': 'Внимание: {n} критерий(ев) с неизвестным типом',
+    'confirm.overwrite': 'Перезаписать текущий урок?',
+    'confirm.deleteAll': 'Удалить все критерии?',
+    'prompt.preset': 'Загрузить пресет (перезапишет текущее). Варианты:\n{options}\n\nВведи ID:',
+    // TOUR
+    'tour.next': 'Дальше →',
+    'tour.prev': '← Назад',
+    'tour.skip': 'Пропустить',
+    'tour.finish': 'Готово ✓',
+    'tour.counter': 'Шаг {n} из {total}',
+    'tour.s1.title': '👋 Добро пожаловать в Конструктор!',
+    'tour.s1.body': 'Здесь ты собираешь ZIP-чекер для своих уроков Minecraft. Ученик загрузит свой мир, а инструмент проверит, соответствует ли он критериям, которые ты задашь. Пройдём по шагам (можно пропустить).',
+    'tour.s2.title': 'Шаг 1: ID урока',
+    'tour.s2.body': 'Уникальный идентификатор (например, M1L3 или M2L1). Используется как имя ZIP-файла и для сохранения прогресса ученика. Должен совпадать с кодировкой урока в LMS.',
+    'tour.s3.title': 'Шаг 2: Название урока',
+    'tour.s3.body': 'Заголовок, который увидит ученик в шапке проверщика. Например: "Сторожевая башня" или "Создай свой геймплей".',
+    'tour.s4.title': 'Шаг 3: Инструкция',
+    'tour.s4.body': 'Короткий текст над зоной загрузки. Например: "Загрузи свой .mcworld, чтобы проверить башню".',
+    'tour.s5.title': 'Шаг 4: Каталог проверок',
+    'tour.s5.body': 'Все доступные проверки сгруппированы по категориям (Мир, NPC, Сущности, Таблички). Нажми на любой пункт — он добавится в твой урок.',
+    'tour.s6.title': 'Шаг 5: Критерии урока',
+    'tour.s6.body': 'Здесь появляются добавленные критерии. Кликни по карточке, чтобы настроить параметры (например, минимум NPC) и, при желании, изменить текст и подсказку, которые увидит ученик.',
+    'tour.s7.title': 'Шаг 6: Предпросмотр',
+    'tour.s7.body': 'Тут видно, как критерии будут выглядеть для ученика. Если формулировка звучит странно, вернись в карточку и поправь её.',
+    'tour.s8.title': 'Шаг 7: Пресеты',
+    'tour.s8.body': 'Готовые шаблоны под уроки модуля (M1L1, M1L2, M1L3, M1L5). Экономят время: загружаешь базу и подкручиваешь. Внимание: перезаписывают текущие критерии.',
+    'tour.s9.title': 'Шаг 8: Загрузить / Сохранить JSON',
+    'tour.s9.body': 'Сохрани конфиг как JSON, чтобы вернуться к нему позже или поделиться. Загрузка JSON восстанавливает ранее сохранённую конфигурацию.',
+    'tour.s10.title': 'Шаг 9: Экспорт ZIP',
+    'tour.s10.body': 'Главная кнопка: создаст файл {ID}_checker.zip, готовый к загрузке во FrameBox-уровень в LMS. Всё!',
+    'tour.s11.title': '🚀 Загрузка в LMS',
+    'tour.s11.body': 'В LMS: создай Level → тип FrameBox → вкладка FrameBox → Upload ZIP → выбери файл. Потом привяжи level к нужному Task — и готово. Хорошей работы!'
+  },
+  en: {
+    'app.title': '🧪 Checker Builder (world + code)',
+    'app.subtitle': 'Configure criteria for .mcworld and/or .mkcd (Code Builder) and export a ZIP ready for FrameBox.',
+    'btn.tour': 'Tour',
+    'btn.help': 'Cheatsheet',
+    'btn.presets': '📋 Presets',
+    'btn.loadJson': '📥 Load JSON',
+    'btn.saveJson': '💾 Save JSON',
+    'btn.exportZip': '📦 Export ZIP',
+    'help.title': '📋 Quick reference',
+    'help.print': 'Print',
+    'help.close': 'Close',
+    'help.section.recipes': '📝 What to use for which lesson',
+    'help.section.files': '🗂 Which file checks what',
+    'help.section.all': '📚 All checks',
+    'help.recipe.world': 'Create & configure world',
+    'help.recipe.world.tag': 'M1L1, M1L4',
+    'help.recipe.npc': 'NPCs & dialogue',
+    'help.recipe.npc.tag': 'M1L2, M1L5',
+    'help.recipe.structure': 'Build structure (tower, house)',
+    'help.recipe.structure.tag': 'M1L3',
+    'help.recipe.code': 'Agent code (loops)',
+    'help.recipe.code.tag': 'M2L1-L3',
+    'help.recipe.hybrid': 'World + code (hybrid)',
+    'help.recipe.hybrid.tag': 'M2L1+',
+    'help.file.world.title': 'World file',
+    'help.file.world.desc': 'world, NPCs, entities, signs, world settings',
+    'help.file.code.title': 'Code Builder project',
+    'help.file.code.desc': 'TypeScript code, chat commands, loops, API calls',
+    'help.file.checks': '{n} checks',
+    'btn.clearAll': 'Clear all',
+    'btn.add': '+ Add',
+    'field.lessonId': 'Lesson ID',
+    'field.lessonId.help': 'Unique identifier (e.g. M1L3). Used to save student progress.',
+    'field.lessonName': 'Lesson name',
+    'field.lessonName.placeholder': 'E.g. NPCs and dialogues',
+    'field.lessonName.default': 'New lesson',
+    'field.lessonIntro': 'Student instruction',
+    'field.lessonIntro.help': 'Short text shown above the upload area.',
+    'field.lessonIntro.default': 'Upload your world to verify',
+    'catalog.title': '📚 Check catalog',
+    'catalog.hint': 'Click any item to add it to the lesson. Then configure its parameters on the right.',
+    'builder.title': '🎯 Lesson criteria',
+    'builder.empty.title': 'No criteria yet.',
+    'builder.empty.hint': 'Pick something from the catalog on the left.',
+    'builder.studentLabel': 'Text the student will see (criterion label)',
+    'builder.studentHint': 'Hint for the student (optional)',
+    'builder.emptyDefault': 'If left empty, this is used:',
+    'builder.noParams': 'No parameters.',
+    'preview.title': '👁️ Preview (what the student will see)',
+    'preview.empty': 'Add criteria to see the preview.',
+    'preview.req.world': 'This lesson needs:',
+    'preview.req.code': 'This lesson checks code only:',
+    'preview.req.both': 'This lesson needs TWO files:',
+    'section.world.title': 'World checks',
+    'section.code.title':  'Code checks',
+    'cat.world': 'World',
+    'cat.npc': 'NPCs & dialogues',
+    'cat.entity': 'Entities (mobs)',
+    'cat.sign': 'Signs',
+    'cat.code': 'Student code (.mkcd)',
+    'toast.zipOk': 'ZIP generated ✔',
+    'toast.jsonOk': 'JSON saved ✔',
+    'toast.loaded': 'Configuration loaded ✔',
+    'toast.empty': 'Add at least one criterion',
+    'toast.presetNotFound': 'Preset not found',
+    'toast.presetLoaded': 'Preset "{name}" loaded',
+    'toast.exportError': 'Export error: ',
+    'toast.importError': 'Error: ',
+    'toast.invalidFormat': 'Invalid format: missing checks[]',
+    'toast.unknownTypes': 'Warning: {n} check(s) with unknown type',
+    'confirm.overwrite': 'Overwrite the current lesson?',
+    'confirm.deleteAll': 'Delete all criteria?',
+    'prompt.preset': 'Load preset (overwrites current). Options:\n{options}\n\nEnter ID:',
+    // TOUR
+    'tour.next': 'Next →',
+    'tour.prev': '← Back',
+    'tour.skip': 'Skip',
+    'tour.finish': 'Done ✓',
+    'tour.counter': 'Step {n} of {total}',
+    'tour.s1.title': '👋 Welcome to the Builder!',
+    'tour.s1.body': 'Here you build the ZIP checker for your Minecraft lessons. Students will upload their world and the tool verifies it against the criteria you define. Let’s walk through it (skip anytime).',
+    'tour.s2.title': 'Step 1: Lesson ID',
+    'tour.s2.body': 'Unique identifier (e.g. M1L3 or M2L1). Used as the ZIP filename and to save student progress. Must match the lesson’s codification in LMS.',
+    'tour.s3.title': 'Step 2: Lesson name',
+    'tour.s3.body': 'Title shown to students in the checker header. E.g. "Watchtower" or "Create your gameplay".',
+    'tour.s4.title': 'Step 3: Instruction',
+    'tour.s4.body': 'Short text above the upload area. E.g. "Upload your .mcworld to verify the watchtower".',
+    'tour.s5.title': 'Step 4: Check catalog',
+    'tour.s5.body': 'All available checks grouped by category (World, NPCs, Entities, Signs). Click any item to add it to your lesson.',
+    'tour.s6.title': 'Step 5: Lesson criteria',
+    'tour.s6.body': 'Added criteria appear here. Click a card to configure parameters (e.g. minimum NPC count) and, optionally, customize the label and hint the student will see.',
+    'tour.s7.title': 'Step 6: Preview',
+    'tour.s7.body': 'See how criteria will look to the student. If wording sounds off, go back to the card and edit it.',
+    'tour.s8.title': 'Step 7: Presets',
+    'tour.s8.body': 'Ready-made templates for module lessons (M1L1, M1L2, M1L3, M1L5). They save time: load the base, then tweak. Note: presets overwrite current criteria.',
+    'tour.s9.title': 'Step 8: Load / Save JSON',
+    'tour.s9.body': 'Save the config as JSON to come back to it later or share. Load JSON restores a previously saved configuration.',
+    'tour.s10.title': 'Step 9: Export ZIP',
+    'tour.s10.body': 'Main button: generates {ID}_checker.zip, ready to upload as a FrameBox level in LMS. Done!',
+    'tour.s11.title': '🚀 Upload to LMS',
+    'tour.s11.body': 'In LMS: create a Level → type FrameBox → FrameBox tab → Upload ZIP → pick your file. Then link the level to the matching Task. Good work!'
+  }
+};
+
+// Checker runtime (embedded in ZIP) — student-facing strings
+const CHECKER_UI = {
+  es: {
+    drop: 'Arrastra el archivo aquí o haz clic',
+    analyzing: 'Analizando archivo(s)...',
+    errorPrefix: 'Error al procesar:',
+    retry: 'Sube otro archivo para intentar de nuevo',
+    invalidFile: 'Formato no soportado (.mcworld o .mkcd)',
+    wrongSlot: 'Este archivo va en la otra zona',
+    slotWorldTitle: 'Mundo Minecraft',
+    slotCodeTitle: 'Proyecto Code Builder',
+    slotWorldEmpty: 'Suelta tu .mcworld aquí',
+    slotCodeEmpty: 'Suelta tu .mkcd aquí',
+    needsBoth: 'Esta lección requiere dos archivos:',
+    needsCodeOnly: 'Esta lección revisa solo el código:',
+    student: 'Estudiante',
+    worldInfo: 'Información del mundo',
+    codeInfo: 'Información del código',
+    codeName: 'Proyecto', codeLines: 'Líneas', codeChats: 'Comandos de chat', codeLoops: 'Bucles', codeParse: 'Parseo',
+    codeSource: 'Código (main.ts)',
+    needWorld: 'Sube un .mcworld para verificar este criterio',
+    needCode: 'Sube un .mkcd (Code Builder) para verificar este criterio',
+    checklist: 'Lista de verificación',
+    npcs: 'NPCs encontrados',
+    entities: 'Entidades',
+    metaName: 'Nombre', metaGamemode: 'Modo de juego', metaDifficulty: 'Dificultad', metaSeed: 'Semilla', metaEducation: 'Education',
+    yes: 'Sí', no: 'No', empty: '(vacío)', noname: '(sin nombre)', button: 'Botón', criteria: 'criterios', pos: 'Pos', skin: 'Skin',
+    gamemodes: {0:'Supervivencia',1:'Creativo',2:'Aventura',3:'Espectador'},
+    difficulties: {0:'Pacífico',1:'Fácil',2:'Normal',3:'Difícil'}
+  },
+  ru: {
+    drop: 'Перетащи файл сюда или нажми',
+    analyzing: 'Анализирую файлы...',
+    errorPrefix: 'Ошибка обработки:',
+    retry: 'Загрузи другой файл, чтобы попробовать снова',
+    invalidFile: 'Формат не поддерживается (.mcworld или .mkcd)',
+    wrongSlot: 'Этот файл нужно в другую зону',
+    slotWorldTitle: 'Мир Minecraft',
+    slotCodeTitle: 'Проект Code Builder',
+    slotWorldEmpty: 'Брось .mcworld сюда',
+    slotCodeEmpty: 'Брось .mkcd сюда',
+    needsBoth: 'Для этого урока нужны два файла:',
+    needsCodeOnly: 'Этот урок проверяет только код:',
+    student: 'Ученик',
+    worldInfo: 'Информация о мире',
+    codeInfo: 'Информация о коде',
+    codeName: 'Проект', codeLines: 'Строк', codeChats: 'Команды чата', codeLoops: 'Циклы', codeParse: 'Парсер',
+    codeSource: 'Код (main.ts)',
+    needWorld: 'Загрузи .mcworld, чтобы проверить этот критерий',
+    needCode: 'Загрузи .mkcd (Code Builder), чтобы проверить этот критерий',
+    checklist: 'Контрольный список',
+    npcs: 'Найденные NPC',
+    entities: 'Сущности',
+    metaName: 'Название', metaGamemode: 'Режим игры', metaDifficulty: 'Сложность', metaSeed: 'Сид', metaEducation: 'Education',
+    yes: 'Да', no: 'Нет', empty: '(пусто)', noname: '(без имени)', button: 'Кнопка', criteria: 'критериев', pos: 'Поз', skin: 'Скин',
+    gamemodes: {0:'Выживание',1:'Творческий',2:'Приключение',3:'Наблюдатель'},
+    difficulties: {0:'Мирно',1:'Легко',2:'Нормально',3:'Сложно'}
+  },
+  en: {
+    drop: 'Drop a file here or click',
+    analyzing: 'Analyzing file(s)...',
+    errorPrefix: 'Error processing:',
+    retry: 'Upload another file to try again',
+    invalidFile: 'Unsupported format (.mcworld or .mkcd)',
+    wrongSlot: 'This file goes in the other zone',
+    slotWorldTitle: 'Minecraft world',
+    slotCodeTitle: 'Code Builder project',
+    slotWorldEmpty: 'Drop your .mcworld here',
+    slotCodeEmpty: 'Drop your .mkcd here',
+    needsBoth: 'This lesson needs two files:',
+    needsCodeOnly: 'This lesson checks only the code:',
+    student: 'Student',
+    worldInfo: 'World information',
+    codeInfo: 'Code information',
+    codeName: 'Project', codeLines: 'Lines', codeChats: 'Chat commands', codeLoops: 'Loops', codeParse: 'Parse',
+    codeSource: 'Code (main.ts)',
+    needWorld: 'Upload a .mcworld to verify this criterion',
+    needCode: 'Upload a .mkcd (Code Builder) to verify this criterion',
+    checklist: 'Checklist',
+    npcs: 'NPCs found',
+    entities: 'Entities',
+    metaName: 'Name', metaGamemode: 'Game mode', metaDifficulty: 'Difficulty', metaSeed: 'Seed', metaEducation: 'Education',
+    yes: 'Yes', no: 'No', empty: '(empty)', noname: '(no name)', button: 'Button', criteria: 'criteria', pos: 'Pos', skin: 'Skin',
+    gamemodes: {0:'Survival',1:'Creative',2:'Adventure',3:'Spectator'},
+    difficulties: {0:'Peaceful',1:'Easy',2:'Normal',3:'Hard'}
+  }
+};
+
+let currentLang = localStorage.getItem('mcb_lang') || 'es';
+if(!I18N[currentLang])currentLang='es';
+
+function t(key, vars){
+  let s=(I18N[currentLang]&&I18N[currentLang][key])||(I18N.es[key])||key;
+  if(vars)for(const k in vars)s=s.replace('{'+k+'}',vars[k]);
+  return s;
+}
+function ml(obj){if(!obj)return '';return obj[currentLang]||obj.es||Object.values(obj)[0]||''}
+function mlFn(obj, args){const fn=obj?(obj[currentLang]||obj.es||Object.values(obj)[0]):null;return fn?fn(args):''}
+
+/* ====================================================================
+   CHECK_REGISTRY — каталог проверок, все тексты хранятся как {es,ru,en}
+   ==================================================================== */
+const CHECK_REGISTRY = {};
+
+// ---------- MUNDO / МИР / WORLD ----------
+CHECK_REGISTRY['world.valid'] = {
+  category: 'world',
+  label: {es:'Archivo de mundo válido', ru:'Файл мира корректен', en:'Valid world file'},
+  description: {es:'El archivo .mcworld se abre correctamente y contiene metadatos.', ru:'Файл .mcworld открывается корректно и содержит метаданные.', en:'The .mcworld file opens correctly and contains metadata.'},
+  params: [],
+  defaultLabel: {es:function(){return 'Archivo .mcworld válido'}, ru:function(){return 'Корректный файл .mcworld'}, en:function(){return 'Valid .mcworld file'}},
+  defaultHint: {es:function(){return 'El mundo se abre correctamente.'}, ru:function(){return 'Мир открывается корректно.'}, en:function(){return 'The world opens correctly.'}},
+  evaluator: function(world,p){return world.metadata!==null}
+};
+
+CHECK_REGISTRY['world.named'] = {
+  category: 'world',
+  label: {es:'Mundo con nombre personalizado', ru:'Мир с кастомным названием', en:'World with custom name'},
+  description: {es:'El nombre del mundo no está vacío y no es el genérico "My World".', ru:'Название мира не пустое и не стандартное "My World".', en:'World name is not empty and not the default "My World".'},
+  params: [],
+  defaultLabel: {es:function(){return 'El mundo tiene un nombre personalizado'}, ru:function(){return 'Мир имеет кастомное название'}, en:function(){return 'The world has a custom name'}},
+  defaultHint: {es:function(){return 'Cambia el nombre por defecto antes de guardar.'}, ru:function(){return 'Смени стандартное название перед сохранением.'}, en:function(){return 'Change the default name before saving.'}},
+  evaluator: function(world,p){var m=world.metadata;if(!m||typeof m.LevelName!=='string')return false;var n=m.LevelName.trim().toLowerCase();return n!==''&&n!=='my world'&&n!=='mi mundo'&&n!=='мой мир'}
+};
+
+CHECK_REGISTRY['world.name_contains'] = {
+  category: 'world',
+  label: {es:'Nombre del mundo contiene texto', ru:'Название мира содержит текст', en:'World name contains text'},
+  description: {es:'Comprueba que el nombre del mundo incluya cierto texto.', ru:'Проверяет, что название мира содержит заданный текст.', en:'Checks that the world name contains the given text.'},
+  params: [{key:'text',type:'text',label:{es:'Texto requerido',ru:'Искомый текст',en:'Required text'},default:'',placeholder:''}],
+  defaultLabel: {
+    es:function(p){return 'El nombre del mundo contiene "'+(p.text||'')+'"'},
+    ru:function(p){return 'Название мира содержит "'+(p.text||'')+'"'},
+    en:function(p){return 'World name contains "'+(p.text||'')+'"'}
+  },
+  defaultHint: {
+    es:function(p){return 'El nombre debe incluir: '+(p.text||'')},
+    ru:function(p){return 'Название должно содержать: '+(p.text||'')},
+    en:function(p){return 'The name must contain: '+(p.text||'')}
+  },
+  evaluator: function(world,p){var m=world.metadata;if(!m||typeof m.LevelName!=='string'||!p.text)return false;return m.LevelName.toLowerCase().indexOf(String(p.text).toLowerCase())>=0}
+};
+
+CHECK_REGISTRY['world.gamemode_is'] = {
+  category: 'world',
+  label: {es:'Modo de juego específico', ru:'Определённый режим игры', en:'Specific game mode'},
+  description: {es:'El mundo está configurado en el modo de juego indicado.', ru:'Мир настроен на указанный режим игры.', en:'The world is set to the given game mode.'},
+  params: [{key:'mode',type:'select',label:{es:'Modo requerido',ru:'Требуемый режим',en:'Required mode'},default:'1',options:[
+    {value:'0',label:{es:'Supervivencia',ru:'Выживание',en:'Survival'}},
+    {value:'1',label:{es:'Creativo',ru:'Творческий',en:'Creative'}},
+    {value:'2',label:{es:'Aventura',ru:'Приключение',en:'Adventure'}},
+    {value:'3',label:{es:'Espectador',ru:'Наблюдатель',en:'Spectator'}}
+  ]}],
+  defaultLabel: {
+    es:function(p){var m={'0':'Supervivencia','1':'Creativo','2':'Aventura','3':'Espectador'};return 'Modo de juego: '+(m[p.mode]||'?')},
+    ru:function(p){var m={'0':'Выживание','1':'Творческий','2':'Приключение','3':'Наблюдатель'};return 'Режим игры: '+(m[p.mode]||'?')},
+    en:function(p){var m={'0':'Survival','1':'Creative','2':'Adventure','3':'Spectator'};return 'Game mode: '+(m[p.mode]||'?')}
+  },
+  defaultHint: {
+    es:function(p){return 'El mundo debe estar en el modo indicado.'},
+    ru:function(p){return 'Мир должен быть в указанном режиме.'},
+    en:function(p){return 'The world must be in the given mode.'}
+  },
+  evaluator: function(world,p){var m=world.metadata;if(!m)return false;return String(m.GameType)===String(p.mode)}
+};
+
+CHECK_REGISTRY['world.difficulty_is'] = {
+  category: 'world',
+  label: {es:'Dificultad específica', ru:'Определённая сложность', en:'Specific difficulty'},
+  description: {es:'La dificultad del mundo coincide con el valor requerido.', ru:'Сложность мира соответствует требуемой.', en:'World difficulty matches the required value.'},
+  params: [{key:'diff',type:'select',label:{es:'Dificultad',ru:'Сложность',en:'Difficulty'},default:'2',options:[
+    {value:'0',label:{es:'Pacífico',ru:'Мирно',en:'Peaceful'}},
+    {value:'1',label:{es:'Fácil',ru:'Легко',en:'Easy'}},
+    {value:'2',label:{es:'Normal',ru:'Нормально',en:'Normal'}},
+    {value:'3',label:{es:'Difícil',ru:'Сложно',en:'Hard'}}
+  ]}],
+  defaultLabel: {
+    es:function(p){var d={'0':'Pacífico','1':'Fácil','2':'Normal','3':'Difícil'};return 'Dificultad: '+(d[p.diff]||'?')},
+    ru:function(p){var d={'0':'Мирно','1':'Легко','2':'Нормально','3':'Сложно'};return 'Сложность: '+(d[p.diff]||'?')},
+    en:function(p){var d={'0':'Peaceful','1':'Easy','2':'Normal','3':'Hard'};return 'Difficulty: '+(d[p.diff]||'?')}
+  },
+  defaultHint: {
+    es:function(p){return 'La dificultad debe coincidir con el valor indicado.'},
+    ru:function(p){return 'Сложность должна совпадать с указанной.'},
+    en:function(p){return 'Difficulty must match the given value.'}
+  },
+  evaluator: function(world,p){var m=world.metadata;if(!m)return false;return String(m.Difficulty)===String(p.diff)}
+};
+
+CHECK_REGISTRY['world.seed_set'] = {
+  category: 'world',
+  label: {es:'Semilla definida', ru:'Сид определён', en:'Seed defined'},
+  description: {es:'El mundo tiene una semilla asignada y no es cero.', ru:'У мира задан сид, и он не равен нулю.', en:'World has a seed assigned and it is not zero.'},
+  params: [],
+  defaultLabel: {es:function(){return 'El mundo tiene una semilla'}, ru:function(){return 'У мира задан сид'}, en:function(){return 'The world has a seed'}},
+  defaultHint: {es:function(){return 'La semilla del mundo debe estar definida.'}, ru:function(){return 'Сид мира должен быть задан.'}, en:function(){return 'The world seed must be set.'}},
+  evaluator: function(world,p){var m=world.metadata;if(!m||m.RandomSeed==null)return false;if(typeof m.RandomSeed==='number')return m.RandomSeed!==0;if(Array.isArray(m.RandomSeed))return !(m.RandomSeed[0]===0&&m.RandomSeed[1]===0);return true}
+};
+
+CHECK_REGISTRY['world.education_enabled'] = {
+  category: 'world',
+  label: {es:'Minecraft Education activado', ru:'Minecraft Education включён', en:'Minecraft Education enabled'},
+  description: {es:'Las funciones educativas están activas (pizarras, química, agente…).', ru:'Образовательные функции активны (доски, химия, агент…).', en:'Educational features are active (boards, chemistry, agent…).'},
+  params: [],
+  defaultLabel: {es:function(){return 'Minecraft Education activado'}, ru:function(){return 'Minecraft Education включён'}, en:function(){return 'Minecraft Education enabled'}},
+  defaultHint: {es:function(){return 'Activa las funciones educativas al crear el mundo.'}, ru:function(){return 'Включи образовательные функции при создании мира.'}, en:function(){return 'Enable educational features when creating the world.'}},
+  evaluator: function(world,p){var m=world.metadata;return !!(m&&m.educationFeaturesEnabled)}
+};
+
+CHECK_REGISTRY['world.cheats_enabled'] = {
+  category: 'world',
+  label: {es:'Comandos (trucos) activados', ru:'Команды (читы) включены', en:'Commands (cheats) enabled'},
+  description: {es:'El mundo permite el uso de comandos.', ru:'В мире разрешены команды.', en:'The world allows commands.'},
+  params: [],
+  defaultLabel: {es:function(){return 'Comandos activados en el mundo'}, ru:function(){return 'Команды включены в мире'}, en:function(){return 'Commands enabled in the world'}},
+  defaultHint: {es:function(){return 'Activa "Activar trampas" al crear el mundo.'}, ru:function(){return 'Включи "Активировать читы" при создании мира.'}, en:function(){return 'Enable "Activate cheats" when creating the world.'}},
+  evaluator: function(world,p){var m=world.metadata;return !!(m&&m.commandsEnabled)}
+};
+
+// ---------- NPC ----------
+CHECK_REGISTRY['npc.min_count'] = {
+  category: 'npc',
+  label: {es:'Cantidad mínima de NPCs', ru:'Минимальное количество NPC', en:'Minimum NPC count'},
+  description: {es:'El mundo contiene al menos N NPCs colocados.', ru:'В мире не менее N размещённых NPC.', en:'World contains at least N placed NPCs.'},
+  params: [{key:'min',type:'number',label:{es:'Cantidad mínima',ru:'Минимум',en:'Minimum'},default:1,min:1,max:50}],
+  defaultLabel: {
+    es:function(p){return 'Colocar al menos '+p.min+' NPC(s)'},
+    ru:function(p){return 'Разместить минимум '+p.min+' NPC'},
+    en:function(p){return 'Place at least '+p.min+' NPC(s)'}
+  },
+  defaultHint: {
+    es:function(p){return 'Se esperan mínimo '+p.min+' NPC(s) en el mundo.'},
+    ru:function(p){return 'Ожидается минимум '+p.min+' NPC в мире.'},
+    en:function(p){return 'Expect at least '+p.min+' NPC(s) in the world.'}
+  },
+  evaluator: function(world,p){return (world.npcs||[]).length>=Number(p.min||1)}
+};
+
+CHECK_REGISTRY['npc.exact_count'] = {
+  category: 'npc',
+  label: {es:'Cantidad exacta de NPCs', ru:'Точное количество NPC', en:'Exact NPC count'},
+  description: {es:'El mundo contiene exactamente N NPCs.', ru:'В мире ровно N NPC.', en:'World contains exactly N NPCs.'},
+  params: [{key:'count',type:'number',label:{es:'Cantidad exacta',ru:'Точное число',en:'Exact count'},default:3,min:1,max:50}],
+  defaultLabel: {
+    es:function(p){return 'Colocar exactamente '+p.count+' NPCs'},
+    ru:function(p){return 'Разместить ровно '+p.count+' NPC'},
+    en:function(p){return 'Place exactly '+p.count+' NPCs'}
+  },
+  defaultHint: {
+    es:function(p){return 'Deben ser justo '+p.count+' NPCs.'},
+    ru:function(p){return 'Должно быть ровно '+p.count+' NPC.'},
+    en:function(p){return 'Must be exactly '+p.count+' NPCs.'}
+  },
+  evaluator: function(world,p){return (world.npcs||[]).length===Number(p.count||0)}
+};
+
+CHECK_REGISTRY['npc.all_named'] = {
+  category: 'npc',
+  label: {es:'Todos los NPCs con nombre personalizado', ru:'Все NPC имеют кастомное имя', en:'All NPCs have custom names'},
+  description: {es:'Cada NPC tiene un nombre que no es vacío ni "NPC".', ru:'У каждого NPC задано имя (не пустое и не "NPC").', en:'Each NPC has a name that is not empty or "NPC".'},
+  params: [],
+  defaultLabel: {es:function(){return 'Todos los NPCs tienen nombre personalizado'}, ru:function(){return 'У всех NPC задано кастомное имя'}, en:function(){return 'All NPCs have custom names'}},
+  defaultHint: {es:function(){return 'Dale un nombre único a cada NPC.'}, ru:function(){return 'Задай уникальное имя каждому NPC.'}, en:function(){return 'Give each NPC a unique name.'}},
+  evaluator: function(world,p){var n=world.npcs||[];if(!n.length)return false;return n.every(function(x){var nm=(x.RawtextName||'').trim().toLowerCase();return nm!==''&&nm!=='npc'})}
+};
+
+CHECK_REGISTRY['npc.all_have_dialogue'] = {
+  category: 'npc',
+  label: {es:'Todos los NPCs tienen diálogo', ru:'У всех NPC есть диалог', en:'All NPCs have dialogue'},
+  description: {es:'Cada NPC tiene un texto de diálogo escrito.', ru:'У каждого NPC написан текст диалога.', en:'Each NPC has dialogue text written.'},
+  params: [],
+  defaultLabel: {es:function(){return 'Todos los NPCs tienen diálogo escrito'}, ru:function(){return 'У всех NPC написан диалог'}, en:function(){return 'All NPCs have dialogue written'}},
+  defaultHint: {es:function(){return 'Escribe un diálogo para cada NPC.'}, ru:function(){return 'Напиши диалог для каждого NPC.'}, en:function(){return 'Write dialogue for each NPC.'}},
+  evaluator: function(world,p){var n=world.npcs||[];if(!n.length)return false;return n.every(function(x){return (x.InterativeText||'').trim().length>0})}
+};
+
+CHECK_REGISTRY['npc.dialogue_min_length'] = {
+  category: 'npc',
+  label: {es:'Diálogo de longitud mínima', ru:'Минимальная длина диалога', en:'Minimum dialogue length'},
+  description: {es:'Al menos un NPC tiene un diálogo con N o más caracteres.', ru:'Хотя бы у одного NPC диалог длиной N или более символов.', en:'At least one NPC has dialogue with N or more characters.'},
+  params: [{key:'min',type:'number',label:{es:'Caracteres mínimos',ru:'Минимум символов',en:'Min characters'},default:30,min:1,max:1000}],
+  defaultLabel: {
+    es:function(p){return 'Diálogo de al menos '+p.min+' caracteres'},
+    ru:function(p){return 'Диалог не короче '+p.min+' символов'},
+    en:function(p){return 'Dialogue of at least '+p.min+' characters'}
+  },
+  defaultHint: {
+    es:function(p){return 'Escribe un diálogo con mínimo '+p.min+' caracteres.'},
+    ru:function(p){return 'Напиши диалог минимум на '+p.min+' символов.'},
+    en:function(p){return 'Write dialogue with at least '+p.min+' characters.'}
+  },
+  evaluator: function(world,p){var n=world.npcs||[];var lim=Number(p.min||0);return n.some(function(x){return (x.InterativeText||'').length>=lim})}
+};
+
+CHECK_REGISTRY['npc.uses_format_codes'] = {
+  category: 'npc',
+  label: {es:'Uso de códigos de formato (§)', ru:'Использование кодов форматирования (§)', en:'Use of format codes (§)'},
+  description: {es:'Al menos un NPC usa códigos § para color, negrita o cursiva.', ru:'Хотя бы один NPC использует коды § (цвет, жирный, курсив).', en:'At least one NPC uses § codes for color, bold, or italic.'},
+  params: [],
+  defaultLabel: {es:function(){return 'Usar códigos de formato (§) en algún diálogo'}, ru:function(){return 'Использовать коды форматирования (§) в диалоге'}, en:function(){return 'Use format codes (§) in a dialogue'}},
+  defaultHint: {es:function(){return 'Usa § seguido de letra/número (ej. §l, §c).'}, ru:function(){return 'Используй § с буквой/цифрой (напр. §l, §c).'}, en:function(){return 'Use § followed by a letter/number (e.g. §l, §c).'}},
+  evaluator: function(world,p){var n=world.npcs||[];return n.some(function(x){var s=(x.InterativeText||'')+(x.RawtextName||'');return /§[0-9a-fk-or]/i.test(s)})}
+};
+
+CHECK_REGISTRY['npc.has_button_with_url'] = {
+  category: 'npc',
+  label: {es:'NPC con botón que enlaza a URL', ru:'NPC с кнопкой-ссылкой на URL', en:'NPC with button linking to URL'},
+  description: {es:'Al menos un NPC tiene un botón de acción con URL (http/https).', ru:'Хотя бы у одного NPC есть кнопка с URL (http/https).', en:'At least one NPC has an action button with a URL (http/https).'},
+  params: [],
+  defaultLabel: {es:function(){return 'Añadir un botón con URL a un NPC'}, ru:function(){return 'Добавить NPC кнопку с URL'}, en:function(){return 'Add a button with URL to an NPC'}},
+  defaultHint: {es:function(){return 'Añade un botón "Abrir URL" al diálogo del NPC.'}, ru:function(){return 'Добавь кнопку "Открыть URL" в диалог NPC.'}, en:function(){return 'Add an "Open URL" button to the NPC dialogue.'}},
+  evaluator: function(world,p){var n=world.npcs||[];return n.some(function(x){if(!x.Actions)return false;try{var a=JSON.parse(x.Actions);return Array.isArray(a)&&a.some(function(b){return b.button_name&&((b.text&&/^https?:\/\//i.test(b.text))||(b.data&&/^https?:\/\//i.test(b.data)))})}catch(e){return false}})}
+};
+
+CHECK_REGISTRY['npc.min_buttons_total'] = {
+  category: 'npc',
+  label: {es:'Total mínimo de botones en NPCs', ru:'Минимум кнопок у NPC (всего)', en:'Minimum total buttons on NPCs'},
+  description: {es:'Suma de todos los botones en todos los NPCs ≥ N.', ru:'Сумма всех кнопок у всех NPC ≥ N.', en:'Sum of all buttons across all NPCs ≥ N.'},
+  params: [{key:'min',type:'number',label:{es:'Mínimo total',ru:'Минимум всего',en:'Minimum total'},default:3,min:1,max:50}],
+  defaultLabel: {
+    es:function(p){return 'Crear al menos '+p.min+' botones en total entre los NPCs'},
+    ru:function(p){return 'Создать минимум '+p.min+' кнопок суммарно у NPC'},
+    en:function(p){return 'Create at least '+p.min+' buttons in total across NPCs'}
+  },
+  defaultHint: {
+    es:function(p){return 'Suma de botones ≥ '+p.min+'.'},
+    ru:function(p){return 'Сумма кнопок ≥ '+p.min+'.'},
+    en:function(p){return 'Sum of buttons ≥ '+p.min+'.'}
+  },
+  evaluator: function(world,p){var n=world.npcs||[],t=0;for(var i=0;i<n.length;i++){if(!n[i].Actions)continue;try{var a=JSON.parse(n[i].Actions);if(Array.isArray(a))t+=a.length}catch(e){}}return t>=Number(p.min||1)}
+};
+
+CHECK_REGISTRY['npc.dialogue_contains'] = {
+  category: 'npc',
+  label: {es:'Diálogo contiene texto', ru:'Диалог содержит текст', en:'Dialogue contains text'},
+  description: {es:'Algún NPC tiene en su diálogo el texto indicado.', ru:'У кого-то из NPC в диалоге есть указанный текст.', en:'Some NPC has the given text in its dialogue.'},
+  params: [{key:'text',type:'text',label:{es:'Texto buscado',ru:'Искомый текст',en:'Searched text'},default:'',placeholder:''}],
+  defaultLabel: {
+    es:function(p){return 'Algún NPC dice "'+(p.text||'')+'"'},
+    ru:function(p){return 'Кто-то из NPC говорит "'+(p.text||'')+'"'},
+    en:function(p){return 'Some NPC says "'+(p.text||'')+'"'}
+  },
+  defaultHint: {
+    es:function(p){return 'Un NPC debe decir: '+(p.text||'')},
+    ru:function(p){return 'Один из NPC должен сказать: '+(p.text||'')},
+    en:function(p){return 'An NPC must say: '+(p.text||'')}
+  },
+  evaluator: function(world,p){if(!p.text)return false;var q=String(p.text).toLowerCase();return (world.npcs||[]).some(function(n){return ((n.InterativeText||'').toLowerCase().indexOf(q)>=0)})}
+};
+
+CHECK_REGISTRY['npc.unique_skins'] = {
+  category: 'npc',
+  label: {es:'Variedad de apariencias (skins)', ru:'Разнообразие скинов', en:'Variety of skins'},
+  description: {es:'Al menos N skins distintas entre los NPCs colocados.', ru:'Минимум N разных скинов среди размещённых NPC.', en:'At least N distinct skins across placed NPCs.'},
+  params: [{key:'min',type:'number',label:{es:'Skins distintas',ru:'Разных скинов',en:'Distinct skins'},default:2,min:2,max:20}],
+  defaultLabel: {
+    es:function(p){return 'Usar al menos '+p.min+' skins diferentes'},
+    ru:function(p){return 'Использовать минимум '+p.min+' разных скинов'},
+    en:function(p){return 'Use at least '+p.min+' different skins'}
+  },
+  defaultHint: {
+    es:function(p){return 'Cambia la apariencia para tener ≥ '+p.min+' skins diferentes.'},
+    ru:function(p){return 'Меняй внешность, чтобы было ≥ '+p.min+' разных скинов.'},
+    en:function(p){return 'Change appearance to get ≥ '+p.min+' different skins.'}
+  },
+  evaluator: function(world,p){var n=world.npcs||[],s=new Set();n.forEach(function(x){if(x.Variant!=null)s.add(x.Variant)});return s.size>=Number(p.min||2)}
+};
+
+// ---------- ENTIDADES / СУЩНОСТИ / ENTITIES ----------
+CHECK_REGISTRY['entity.min_count_of'] = {
+  category: 'entity',
+  label: {es:'Cantidad mínima de entidad específica', ru:'Минимум сущностей конкретного типа', en:'Minimum count of specific entity'},
+  description: {es:'Al menos N entidades del tipo indicado (ej. minecraft:villager).', ru:'Не менее N сущностей указанного типа (напр. minecraft:villager).', en:'At least N entities of the given type (e.g. minecraft:villager).'},
+  params: [
+    {key:'identifier',type:'text',label:{es:'Identificador',ru:'Идентификатор',en:'Identifier'},default:'minecraft:villager',placeholder:'minecraft:villager'},
+    {key:'min',type:'number',label:{es:'Cantidad mínima',ru:'Минимум',en:'Minimum'},default:1,min:1,max:100}
+  ],
+  defaultLabel: {
+    es:function(p){return 'Al menos '+p.min+' '+((p.identifier||'').replace('minecraft:',''))},
+    ru:function(p){return 'Минимум '+p.min+' '+((p.identifier||'').replace('minecraft:',''))},
+    en:function(p){return 'At least '+p.min+' '+((p.identifier||'').replace('minecraft:',''))}
+  },
+  defaultHint: {
+    es:function(p){return 'Coloca ≥ '+p.min+' '+((p.identifier||'').replace('minecraft:',''))+' en el mundo.'},
+    ru:function(p){return 'Размести ≥ '+p.min+' '+((p.identifier||'').replace('minecraft:',''))+' в мире.'},
+    en:function(p){return 'Place ≥ '+p.min+' '+((p.identifier||'').replace('minecraft:',''))+' in the world.'}
+  },
+  evaluator: function(world,p){var id=p.identifier,min=Number(p.min||1);if(!id)return false;var c=(world.allEntities||[]).filter(function(e){return e.identifier===id}).length;return c>=min}
+};
+
+CHECK_REGISTRY['entity.total_min'] = {
+  category: 'entity',
+  label: {es:'Total mínimo de entidades', ru:'Минимум сущностей всего', en:'Minimum total entities'},
+  description: {es:'Número total de entidades ≥ N.', ru:'Общее количество сущностей ≥ N.', en:'Total entity count ≥ N.'},
+  params: [{key:'min',type:'number',label:{es:'Total mínimo',ru:'Минимум всего',en:'Minimum total'},default:5,min:1,max:500}],
+  defaultLabel: {
+    es:function(p){return 'Al menos '+p.min+' entidades en total'},
+    ru:function(p){return 'Минимум '+p.min+' сущностей всего'},
+    en:function(p){return 'At least '+p.min+' entities in total'}
+  },
+  defaultHint: {
+    es:function(p){return 'Debe haber ≥ '+p.min+' entidades.'},
+    ru:function(p){return 'Должно быть ≥ '+p.min+' сущностей.'},
+    en:function(p){return 'Must be ≥ '+p.min+' entities.'}
+  },
+  evaluator: function(world,p){return (world.allEntities||[]).length>=Number(p.min||1)}
+};
+
+CHECK_REGISTRY['entity.unique_types_min'] = {
+  category: 'entity',
+  label: {es:'Variedad mínima de tipos', ru:'Минимум разных типов', en:'Minimum type variety'},
+  description: {es:'Al menos N tipos distintos de entidades.', ru:'Минимум N разных типов сущностей.', en:'At least N distinct entity types.'},
+  params: [{key:'min',type:'number',label:{es:'Tipos distintos',ru:'Разных типов',en:'Distinct types'},default:3,min:2,max:30}],
+  defaultLabel: {
+    es:function(p){return 'Al menos '+p.min+' tipos diferentes de entidades'},
+    ru:function(p){return 'Минимум '+p.min+' разных типов сущностей'},
+    en:function(p){return 'At least '+p.min+' different entity types'}
+  },
+  defaultHint: {
+    es:function(p){return 'Variedad: ≥ '+p.min+' tipos distintos.'},
+    ru:function(p){return 'Разнообразие: ≥ '+p.min+' разных типов.'},
+    en:function(p){return 'Variety: ≥ '+p.min+' distinct types.'}
+  },
+  evaluator: function(world,p){var s=new Set();(world.allEntities||[]).forEach(function(e){s.add(e.identifier)});return s.size>=Number(p.min||2)}
+};
+
+// ---------- LETREROS / ТАБЛИЧКИ / SIGNS ----------
+CHECK_REGISTRY['sign.min_count'] = {
+  category: 'sign',
+  label: {es:'Cantidad mínima de letreros', ru:'Минимум табличек', en:'Minimum number of signs'},
+  description: {es:'El mundo contiene al menos N letreros con texto.', ru:'В мире не менее N табличек с текстом.', en:'World contains at least N signs with text.'},
+  params: [{key:'min',type:'number',label:{es:'Mínimo',ru:'Минимум',en:'Minimum'},default:1,min:1,max:50}],
+  defaultLabel: {
+    es:function(p){return 'Colocar al menos '+p.min+' letrero(s) con texto'},
+    ru:function(p){return 'Поставить минимум '+p.min+' табличек с текстом'},
+    en:function(p){return 'Place at least '+p.min+' sign(s) with text'}
+  },
+  defaultHint: {
+    es:function(p){return 'Coloca ≥ '+p.min+' letreros con texto escrito.'},
+    ru:function(p){return 'Поставь ≥ '+p.min+' табличек с текстом.'},
+    en:function(p){return 'Place ≥ '+p.min+' signs with written text.'}
+  },
+  evaluator: function(world,p){var s=(world.signs||[]).filter(function(x){return (x.text||'').trim().length>0});return s.length>=Number(p.min||1)}
+};
+
+CHECK_REGISTRY['sign.contains_text'] = {
+  category: 'sign',
+  label: {es:'Letrero contiene texto', ru:'Табличка содержит текст', en:'Sign contains text'},
+  description: {es:'Algún letrero contiene el texto indicado.', ru:'Какая-то табличка содержит указанный текст.', en:'Some sign contains the given text.'},
+  params: [{key:'text',type:'text',label:{es:'Texto buscado',ru:'Искомый текст',en:'Searched text'},default:'',placeholder:''}],
+  defaultLabel: {
+    es:function(p){return 'Algún letrero dice "'+(p.text||'')+'"'},
+    ru:function(p){return 'На табличке написано "'+(p.text||'')+'"'},
+    en:function(p){return 'Some sign says "'+(p.text||'')+'"'}
+  },
+  defaultHint: {
+    es:function(p){return 'Un letrero debe contener: '+(p.text||'')},
+    ru:function(p){return 'Табличка должна содержать: '+(p.text||'')},
+    en:function(p){return 'A sign must contain: '+(p.text||'')}
+  },
+  evaluator: function(world,p){if(!p.text)return false;var q=String(p.text).toLowerCase();return (world.signs||[]).some(function(s){return (s.text||'').toLowerCase().indexOf(q)>=0})}
+};
+
+// ---------- CÓDIGO / КОД / CODE (.mkcd) ----------
+// Все code-чеки помечены target:'code' — они получают engine API вместо world.
+
+CHECK_REGISTRY['code.valid'] = {
+  category: 'code', target: 'code',
+  label: {es:'Código se parsea correctamente', ru:'Код успешно парсится', en:'Code parses successfully'},
+  description: {es:'El archivo .mkcd se descomprime y main.ts se parsea sin errores.', ru:'.mkcd распаковывается и main.ts парсится без ошибок.', en:'The .mkcd unpacks and main.ts parses without errors.'},
+  params: [],
+  defaultLabel: {es:function(){return 'El código se parsea sin errores'}, ru:function(){return 'Код парсится без ошибок'}, en:function(){return 'Code parses without errors'}},
+  defaultHint: {es:function(){return 'Comprueba que el proyecto MakeCode se exporte sin errores.'}, ru:function(){return 'Проверь что проект MakeCode экспортируется без ошибок.'}, en:function(){return 'Make sure the MakeCode project exports cleanly.'}},
+  evaluator: function(code,p){return !!code.parsed}
+};
+
+CHECK_REGISTRY['code.chat_command'] = {
+  category: 'code', target: 'code',
+  label: {es:'Comando de chat específico', ru:'Конкретная команда чата', en:'Specific chat command'},
+  description: {es:'El código define player.onChat con el nombre indicado.', ru:'В коде есть player.onChat с указанным именем.', en:'Code defines player.onChat with the given name.'},
+  params: [{key:'name',type:'text',label:{es:'Nombre del comando',ru:'Имя команды',en:'Command name'},default:'run',placeholder:'run'}],
+  defaultLabel: {
+    es:function(p){return 'Comando de chat "'+(p.name||'')+'" definido'},
+    ru:function(p){return 'Команда чата "'+(p.name||'')+'" заведена'},
+    en:function(p){return 'Chat command "'+(p.name||'')+'" defined'}
+  },
+  defaultHint: {
+    es:function(p){return 'Crea player.onChat("'+(p.name||'')+'", ...)'},
+    ru:function(p){return 'Заведи player.onChat("'+(p.name||'')+'", ...)'},
+    en:function(p){return 'Add player.onChat("'+(p.name||'')+'", ...)'}
+  },
+  evaluator: function(code,p){return code.hasChatCommand(p.name||'')}
+};
+
+CHECK_REGISTRY['code.has_loop'] = {
+  category: 'code', target: 'code',
+  label: {es:'Usa al menos un bucle', ru:'Используется хотя бы один цикл', en:'Uses at least one loop'},
+  description: {es:'Hay al menos un for/while en el código (no copy-paste).', ru:'В коде есть хотя бы один for/while (а не копипаста).', en:'There is at least one for/while loop (not copy-paste).'},
+  params: [],
+  defaultLabel: {es:function(){return 'Usar al menos un bucle (for/while)'}, ru:function(){return 'Использовать хотя бы один цикл (for/while)'}, en:function(){return 'Use at least one loop (for/while)'}},
+  defaultHint: {es:function(){return 'Repite acciones con un bucle en lugar de copy-paste.'}, ru:function(){return 'Повторяй действия циклом, а не копипастой.'}, en:function(){return 'Repeat actions with a loop instead of copy-paste.'}},
+  evaluator: function(code,p){return code.hasAnyLoop()}
+};
+
+CHECK_REGISTRY['code.nested_loops'] = {
+  category: 'code', target: 'code',
+  label: {es:'Bucles anidados', ru:'Вложенные циклы', en:'Nested loops'},
+  description: {es:'Hay bucles anidados con la profundidad indicada.', ru:'Есть вложенные циклы заданной глубины.', en:'Nested loops with the given depth.'},
+  params: [{key:'depth',type:'number',label:{es:'Profundidad mínima',ru:'Минимальная глубина',en:'Minimum depth'},default:2,min:2,max:5}],
+  defaultLabel: {
+    es:function(p){return 'Bucles anidados (profundidad ≥ '+p.depth+')'},
+    ru:function(p){return 'Вложенные циклы (глубина ≥ '+p.depth+')'},
+    en:function(p){return 'Nested loops (depth ≥ '+p.depth+')'}
+  },
+  defaultHint: {
+    es:function(p){return 'Anida un bucle dentro de otro al menos '+p.depth+' niveles.'},
+    ru:function(p){return 'Вложи цикл в цикл минимум '+p.depth+' уровней.'},
+    en:function(p){return 'Nest a loop inside another, ≥ '+p.depth+' levels.'}
+  },
+  evaluator: function(code,p){return code.maxLoopDepth()>=Number(p.depth||2)}
+};
+
+CHECK_REGISTRY['code.loop_contains'] = {
+  category: 'code', target: 'code',
+  label: {es:'Bucle contiene llamadas específicas', ru:'Цикл содержит конкретные вызовы', en:'Loop contains specific calls'},
+  description: {es:'Algún bucle contiene todas las funciones listadas (separadas por coma).', ru:'Хотя бы один цикл содержит все указанные функции (через запятую).', en:'At least one loop body contains all listed function calls (comma-separated).'},
+  params: [{key:'calls',type:'text',label:{es:'Llamadas (coma)',ru:'Вызовы (через запятую)',en:'Calls (comma)'},default:'agent.turn,agent.move',placeholder:'agent.turn,agent.move'}],
+  defaultLabel: {
+    es:function(p){return 'Bucle con: '+(p.calls||'')},
+    ru:function(p){return 'Цикл содержит: '+(p.calls||'')},
+    en:function(p){return 'Loop contains: '+(p.calls||'')}
+  },
+  defaultHint: {
+    es:function(p){return 'Dentro del bucle: '+(p.calls||'')},
+    ru:function(p){return 'Внутри цикла: '+(p.calls||'')},
+    en:function(p){return 'Inside the loop: '+(p.calls||'')}
+  },
+  evaluator: function(code,p){var list=(p.calls||'').split(',').map(function(s){return s.trim()}).filter(Boolean);if(!list.length)return false;return code.hasLoopWithCalls(list)}
+};
+
+CHECK_REGISTRY['code.api_call_min'] = {
+  category: 'code', target: 'code',
+  label: {es:'Llamada de API con frecuencia mínima', ru:'Минимум вызовов функции', en:'Minimum API call count'},
+  description: {es:'La función indicada se llama N veces o más.', ru:'Указанная функция вызывается N раз или больше.', en:'The given function is called N times or more.'},
+  params: [
+    {key:'fn',type:'text',label:{es:'Función',ru:'Функция',en:'Function'},default:'agent.move',placeholder:'agent.move'},
+    {key:'min',type:'number',label:{es:'Mínimo',ru:'Минимум',en:'Minimum'},default:1,min:1,max:100}
+  ],
+  defaultLabel: {
+    es:function(p){return (p.fn||'?')+' llamada al menos '+p.min+' veces'},
+    ru:function(p){return (p.fn||'?')+' вызывается минимум '+p.min+' раз'},
+    en:function(p){return (p.fn||'?')+' called at least '+p.min+' times'}
+  },
+  defaultHint: {
+    es:function(p){return 'Usa '+(p.fn||'')+' al menos '+p.min+' veces.'},
+    ru:function(p){return 'Используй '+(p.fn||'')+' минимум '+p.min+' раз.'},
+    en:function(p){return 'Use '+(p.fn||'')+' at least '+p.min+' times.'}
+  },
+  evaluator: function(code,p){return code.countCalls(p.fn||'')>=Number(p.min||1)}
+};
+
+CHECK_REGISTRY['code.uses_block'] = {
+  category: 'code', target: 'code',
+  label: {es:'agent.setItem con bloque específico', ru:'agent.setItem с определённым блоком', en:'agent.setItem with specific block'},
+  description: {es:'agent.setItem usa el identificador de bloque indicado (texto exacto o regex).', ru:'agent.setItem использует указанный блок (точное совпадение или regex).', en:'agent.setItem uses the given block identifier (exact match or regex).'},
+  params: [
+    {key:'block',type:'text',label:{es:'Bloque o regex',ru:'Блок или regex',en:'Block or regex'},default:'SPRUCE_FENCE',placeholder:'SPRUCE_FENCE  o  /_FENCE$/'}
+  ],
+  defaultLabel: {
+    es:function(p){return 'En el inventario: '+(p.block||'?')},
+    ru:function(p){return 'В инвентаре: '+(p.block||'?')},
+    en:function(p){return 'In inventory: '+(p.block||'?')}
+  },
+  defaultHint: {
+    es:function(p){return 'agent.setItem('+(p.block||'')+', ...)'},
+    ru:function(p){return 'agent.setItem('+(p.block||'')+', ...)'},
+    en:function(p){return 'agent.setItem('+(p.block||'')+', ...)'}
+  },
+  evaluator: function(code,p){var b=p.block||'';if(!b)return false;var m=b.match(/^\/(.+)\/([gimsuy]*)$/);if(m){try{return code.callsSetItemMatching(new RegExp(m[1],m[2]))}catch(e){return false}}return code.callsSetItemMatching(b)}
+};
+
+CHECK_REGISTRY['code.assist_set'] = {
+  category: 'code', target: 'code',
+  label: {es:'agent.setAssist con bandera', ru:'agent.setAssist с флагом', en:'agent.setAssist with flag'},
+  description: {es:'agent.setAssist activa/desactiva la bandera indicada.', ru:'agent.setAssist включает/отключает указанный флаг.', en:'agent.setAssist enables/disables the given flag.'},
+  params: [
+    {key:'flag',type:'text',label:{es:'Bandera (constante)',ru:'Флаг (константа)',en:'Flag (constant)'},default:'DESTROY_OBSTACLES',placeholder:'DESTROY_OBSTACLES'},
+    {key:'value',type:'select',label:{es:'Valor',ru:'Значение',en:'Value'},default:'true',options:[
+      {value:'true',label:{es:'true (activado)',ru:'true (включено)',en:'true (on)'}},
+      {value:'false',label:{es:'false (desactivado)',ru:'false (выключено)',en:'false (off)'}}
+    ]}
+  ],
+  defaultLabel: {
+    es:function(p){return 'agent.setAssist('+(p.flag||'?')+', '+(p.value||'true')+')'},
+    ru:function(p){return 'agent.setAssist('+(p.flag||'?')+', '+(p.value||'true')+')'},
+    en:function(p){return 'agent.setAssist('+(p.flag||'?')+', '+(p.value||'true')+')'}
+  },
+  defaultHint: {
+    es:function(p){return 'Activa la bandera '+(p.flag||'')+' = '+(p.value||'true')},
+    ru:function(p){return 'Включи флаг '+(p.flag||'')+' = '+(p.value||'true')},
+    en:function(p){return 'Set assist '+(p.flag||'')+' = '+(p.value||'true')}
+  },
+  evaluator: function(code,p){var v=String(p.value||'true')==='true';return code.setsAssist(p.flag||'',v)}
+};
+
+CHECK_REGISTRY['code.spawn_mob'] = {
+  category: 'code', target: 'code',
+  label: {es:'mobs.spawn con criatura', ru:'mobs.spawn с существом', en:'mobs.spawn with creature'},
+  description: {es:'El código spawnea la criatura indicada.', ru:'В коде спаунится указанное существо.', en:'Code spawns the given creature.'},
+  params: [{key:'mob',type:'text',label:{es:'Criatura',ru:'Существо',en:'Creature'},default:'HORSE',placeholder:'HORSE'}],
+  defaultLabel: {
+    es:function(p){return 'Spawn de '+(p.mob||'?')},
+    ru:function(p){return 'Спаун '+(p.mob||'?')},
+    en:function(p){return 'Spawn '+(p.mob||'?')}
+  },
+  defaultHint: {
+    es:function(p){return 'mobs.spawn('+(p.mob||'')+', ...)'},
+    ru:function(p){return 'mobs.spawn('+(p.mob||'')+', ...)'},
+    en:function(p){return 'mobs.spawn('+(p.mob||'')+', ...)'}
+  },
+  evaluator: function(code,p){return code.spawnsMob(p.mob||'')}
+};
+
+CHECK_REGISTRY['code.has_if'] = {
+  category: 'code', target: 'code',
+  label: {es:'Usa if/else', ru:'Использует if/else', en:'Uses if/else'},
+  description: {es:'El código contiene al menos una sentencia if.', ru:'В коде есть хотя бы один if.', en:'Code contains at least one if statement.'},
+  params: [],
+  defaultLabel: {es:function(){return 'Usar al menos un if/else'}, ru:function(){return 'Использовать хотя бы один if/else'}, en:function(){return 'Use at least one if/else'}},
+  defaultHint: {es:function(){return 'Añade una condición con if (...).'}, ru:function(){return 'Добавь условие if (...).'}, en:function(){return 'Add a condition with if (...).'}},
+  evaluator: function(code,p){return code.hasIfStatement()}
+};
+
+CHECK_REGISTRY['code.total_forward_min'] = {
+  category: 'code', target: 'code',
+  label: {es:'agent avanza distancia mínima', ru:'агент проходит дистанцию ≥ N', en:'agent moves total distance ≥ N'},
+  description: {es:'Suma de bloques que el agente avanza FORWARD (multiplicada por iteraciones de for con límites constantes).', ru:'Сумма блоков FORWARD у агента (с учётом for-циклов с константными границами).', en:'Sum of agent FORWARD blocks (multiplied by static for-loop iterations).'},
+  params: [{key:'min',type:'number',label:{es:'Mínimo bloques',ru:'Минимум блоков',en:'Minimum blocks'},default:32,min:1,max:1000}],
+  defaultLabel: {
+    es:function(p){return 'agent avanza ≥ '+p.min+' bloques al frente'},
+    ru:function(p){return 'агент проходит ≥ '+p.min+' блоков вперёд'},
+    en:function(p){return 'agent moves ≥ '+p.min+' blocks forward'}
+  },
+  defaultHint: {
+    es:function(p){return 'Suma de agent.move(FORWARD, n) (con bucles) ≥ '+p.min},
+    ru:function(p){return 'Сумма agent.move(FORWARD, n) (с циклами) ≥ '+p.min},
+    en:function(p){return 'Sum of agent.move(FORWARD, n) (with loops) ≥ '+p.min}
+  },
+  evaluator: function(code,p){return code.totalAgentForward()>=Number(p.min||32)}
+};
+
+CHECK_REGISTRY['code.uses_identifier'] = {
+  category: 'code', target: 'code',
+  label: {es:'Usa identificador (constante o variable)', ru:'Использует идентификатор (константу или переменную)', en:'Uses identifier (constant or variable)'},
+  description: {es:'El código menciona el identificador exacto (ej. GLASS, SEEDS, my_var).', ru:'В коде встречается указанный идентификатор (например GLASS, SEEDS, my_var).', en:'Code references the exact identifier (e.g. GLASS, SEEDS, my_var).'},
+  params: [{key:'name',type:'text',label:{es:'Identificador',ru:'Идентификатор',en:'Identifier'},default:'GLASS',placeholder:'GLASS'}],
+  defaultLabel: {
+    es:function(p){return 'Usar '+(p.name||'?')},
+    ru:function(p){return 'Использовать '+(p.name||'?')},
+    en:function(p){return 'Use '+(p.name||'?')}
+  },
+  defaultHint: {
+    es:function(p){return 'Refiere a '+(p.name||'')+' en el código.'},
+    ru:function(p){return 'Сошлись на '+(p.name||'')+' в коде.'},
+    en:function(p){return 'Reference '+(p.name||'')+' in the code.'}
+  },
+  evaluator: function(code,p){return code.usesIdentifier(p.name||'')}
+};
+
+CHECK_REGISTRY['code.min_lines'] = {
+  category: 'code', target: 'code',
+  label: {es:'Mínimo de líneas de código', ru:'Минимум строк кода', en:'Minimum code lines'},
+  description: {es:'main.ts tiene al menos N líneas (filtro contra envíos vacíos).', ru:'В main.ts хотя бы N строк (фильтр от пустышек).', en:'main.ts has at least N lines (filter against empty submissions).'},
+  params: [{key:'min',type:'number',label:{es:'Líneas mínimas',ru:'Минимум строк',en:'Min lines'},default:5,min:1,max:500}],
+  defaultLabel: {
+    es:function(p){return 'main.ts tiene ≥ '+p.min+' líneas'},
+    ru:function(p){return 'В main.ts ≥ '+p.min+' строк'},
+    en:function(p){return 'main.ts has ≥ '+p.min+' lines'}
+  },
+  defaultHint: {
+    es:function(p){return 'Escribe al menos '+p.min+' líneas.'},
+    ru:function(p){return 'Напиши минимум '+p.min+' строк.'},
+    en:function(p){return 'Write at least '+p.min+' lines.'}
+  },
+  evaluator: function(code,p){return code.lineCount()>=Number(p.min||1)}
+};
+
+const CATEGORIES = [
+  {id:'world',icon:'🌍',section:'world'},
+  {id:'npc',icon:'👤',section:'world'},
+  {id:'entity',icon:'🐾',section:'world'},
+  {id:'sign',icon:'🪧',section:'world'},
+  {id:'code',icon:'💻',section:'code'},
+];
+
+const SECTIONS = [
+  {id:'world',icon:'🌍',ext:'.mcworld'},
+  {id:'code', icon:'💻',ext:'.mkcd'},
+];
+
+const PRESETS = {
+  'M1L1': {
+    id: 'M1L1',
+    name: {es:'M1L1 — Crear un mundo',ru:'M1L1 — Создать мир',en:'M1L1 — Create a world'},
+    intro: null,
+    checks: [
+      {type:'world.valid',params:{}},
+      {type:'world.named',params:{}},
+      {type:'world.gamemode_is',params:{mode:'1'}},
+      {type:'world.seed_set',params:{}}
+    ]
+  },
+  'M1L2': {
+    id: 'M1L2',
+    name: {es:'M1L2 — NPCs y diálogos',ru:'M1L2 — NPC и диалоги',en:'M1L2 — NPCs and dialogues'},
+    intro: null,
+    checks: [
+      {type:'world.valid',params:{}},
+      {type:'npc.min_count',params:{min:1}},
+      {type:'npc.all_named',params:{}},
+      {type:'npc.all_have_dialogue',params:{}},
+      {type:'npc.uses_format_codes',params:{}},
+      {type:'npc.has_button_with_url',params:{}}
+    ]
+  },
+  'M1L3': {
+    id: 'M1L3',
+    name: {es:'M1L3 — La Torre de Vigilancia',ru:'M1L3 — Сторожевая башня',en:'M1L3 — The Watchtower'},
+    intro: null,
+    checks: [
+      {type:'world.valid',params:{}},
+      {type:'world.named',params:{}},
+      {type:'npc.min_count',params:{min:1}},
+      {type:'npc.all_named',params:{}},
+      {type:'npc.all_have_dialogue',params:{}},
+      {type:'npc.dialogue_min_length',params:{min:15}},
+      {type:'npc.uses_format_codes',params:{}}
+    ]
+  },
+  'M1L5': {
+    id: 'M1L5',
+    name: {es:'M1L5 — Crea tu experiencia jugable',ru:'M1L5 — Создай свой геймплей',en:'M1L5 — Create your playable experience'},
+    intro: null,
+    checks: [
+      {type:'world.valid',params:{}},
+      {type:'world.named',params:{}},
+      {type:'npc.min_count',params:{min:1}},
+      {type:'npc.all_named',params:{}},
+      {type:'npc.all_have_dialogue',params:{}},
+      {type:'npc.uses_format_codes',params:{}},
+      {type:'npc.has_button_with_url',params:{}},
+      {type:'entity.unique_types_min',params:{min:2}}
+    ]
+  },
+
+  // ---------- CODE BUILDER PRESETS (target:'code' only) ----------
+  'AGENT-FENCE': {
+    id: 'M2L0',
+    name: {es:'Code Builder — Cerca con agente',ru:'Code Builder — Забор агентом',en:'Code Builder — Agent fence'},
+    intro: {es:'Sube tu .mkcd con el código que construye una cerca cuadrada con el agente.', ru:'Загрузи .mkcd с кодом, который строит квадратный забор агентом.', en:'Upload your .mkcd with code that builds a square fence with the agent.'},
+    checks: [
+      {type:'code.valid',params:{}},
+      {type:'code.chat_command',params:{name:'run'}},
+      {type:'code.uses_block',params:{block:'/_FENCE$/'}},
+      {type:'code.assist_set',params:{flag:'DESTROY_OBSTACLES',value:'true'}},
+      {type:'code.has_loop',params:{}},
+      {type:'code.loop_contains',params:{calls:'agent.turn,agent.move'}},
+      {type:'code.total_forward_min',params:{min:32}}
+    ]
+  },
+
+  'M2L1-BARN': {
+    id: 'M2L1',
+    name: {es:'M2L1 — Granero (mundo + código)',ru:'M2L1 — Амбар (мир + код)',en:'M2L1 — Barn (world + code)'},
+    intro: {es:'Sube .mcworld del granero y .mkcd con el código que lo construye.', ru:'Загрузи .mcworld амбара и .mkcd с кодом, который его строит.', en:'Upload .mcworld of the barn and .mkcd with the building code.'},
+    checks: [
+      // World checks
+      {type:'world.valid',params:{}},
+      {type:'world.named',params:{}},
+      {type:'entity.min_count_of',params:{identifier:'minecraft:horse',min:1}},
+      // Code checks
+      {type:'code.chat_command',params:{name:'barn'}},
+      {type:'code.uses_block',params:{block:'/^PLANKS_/'}},
+      {type:'code.uses_block',params:{block:'HAY_BLOCK'}},
+      {type:'code.nested_loops',params:{depth:2}},
+      {type:'code.spawn_mob',params:{mob:'HORSE'}},
+      {type:'code.assist_set',params:{flag:'DESTROY_OBSTACLES',value:'true'}}
+    ]
+  },
+
+  'M2L1-HOUSE': {
+    id: 'M2L1H',
+    name: {es:'M2L1 — Casa parametrizada (código)',ru:'M2L1 — Параметрический дом (код)',en:'M2L1 — Parametric house (code)'},
+    intro: {es:'Sube tu .mkcd con la función de construir casa con ancho/alto.', ru:'Загрузи .mkcd с функцией построения дома параметрической ширины/высоты.', en:'Upload your .mkcd with the parametric house-building function.'},
+    checks: [
+      {type:'code.valid',params:{}},
+      {type:'code.chat_command',params:{name:'house'}},
+      {type:'code.api_call_min',params:{fn:'builder.tracePath',min:1}},
+      {type:'code.has_if',params:{}},
+      {type:'code.uses_identifier',params:{name:'GLASS'}},
+      {type:'code.min_lines',params:{min:15}}
+    ]
+  }
+};
+
+/* ====================================================================
+   STATE
+   ==================================================================== */
+let currentConfig = {
+  id: 'M1L3',
+  name: '',
+  intro: '',
+  checks: []
+};
+
+const lessonIdEl = document.getElementById('lessonId');
+const lessonNameEl = document.getElementById('lessonName');
+const lessonIntroEl = document.getElementById('lessonIntro');
+const catalogRoot = document.getElementById('catalogRoot');
+const builderRoot = document.getElementById('builderRoot');
+const previewRoot = document.getElementById('previewRoot');
+const checkCountEl = document.getElementById('checkCount');
+const toastEl = document.getElementById('toast');
+
+function esc(s){if(s==null)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function uid(){return 'c'+Date.now().toString(36)+Math.random().toString(36).substr(2,4)}
+function toast(msg, type){toastEl.textContent=msg;toastEl.className='toast show '+(type||'');setTimeout(()=>toastEl.classList.remove('show'),2500)}
+
+function resolveLabel(check){
+  const def=CHECK_REGISTRY[check.type];
+  if(!def)return check.label||check.type;
+  if(check.label&&check.label.trim())return check.label;
+  return mlFn(def.defaultLabel, check.params||{});
+}
+function resolveHint(check){
+  const def=CHECK_REGISTRY[check.type];
+  if(!def)return check.hint||'';
+  if(check.hint!=null&&check.hint!=='')return check.hint;
+  if(def.defaultHint)return mlFn(def.defaultHint, check.params||{});
+  return '';
+}
+
+/* ====================================================================
+   I18N APPLY — static DOM strings
+   ==================================================================== */
+function applyI18n(){
+  document.documentElement.lang = currentLang;
+  document.getElementById('appTitle').textContent = t('app.title');
+  document.getElementById('appSubtitle').textContent = t('app.subtitle');
+  document.getElementById('btnLoadPreset').textContent = t('btn.presets');
+  document.getElementById('btnImport').textContent = t('btn.loadJson');
+  document.getElementById('btnExportJson').textContent = t('btn.saveJson');
+  document.getElementById('btnExportZip').textContent = t('btn.exportZip');
+  document.getElementById('btnClearAll').textContent = t('btn.clearAll');
+  document.getElementById('catalogTitle').textContent = t('catalog.title');
+  document.getElementById('catalogIntro').textContent = t('catalog.hint');
+  document.getElementById('builderTitle').textContent = t('builder.title');
+  document.getElementById('previewTitle').textContent = t('preview.title');
+
+  document.querySelectorAll('[data-t]').forEach(el=>{el.textContent = t(el.dataset.t)});
+  document.querySelectorAll('[data-t-attr]').forEach(el=>{
+    const [attr,key]=el.dataset.tAttr.split(':');
+    el.setAttribute(attr, t(key));
+  });
+
+  // placeholders/defaults for inputs — only when empty or was default
+  if(!lessonNameEl.value || lessonNameEl.dataset.autoset==='1'){
+    lessonNameEl.value = t('field.lessonName.default');
+    lessonNameEl.dataset.autoset = '1';
+  }
+  lessonNameEl.placeholder = t('field.lessonName.placeholder');
+  if(!lessonIntroEl.value || lessonIntroEl.dataset.autoset==='1'){
+    lessonIntroEl.value = t('field.lessonIntro.default');
+    lessonIntroEl.dataset.autoset = '1';
+  }
+  currentConfig.name = lessonNameEl.value;
+  currentConfig.intro = lessonIntroEl.value;
+
+  // Update lang switch active state
+  document.querySelectorAll('#langSwitch button').forEach(b=>b.classList.toggle('active', b.dataset.lang===currentLang));
+
+  // Tour buttons — labels come from data-t but tour state strings depend on currentLang
+  if(typeof tourState!=='undefined'&&tourState.active)tourRender();
+}
+
+/* ====================================================================
+   CATALOG
+   ==================================================================== */
+function renderCatalog(){
+  catalogRoot.innerHTML='';
+  for(const sec of SECTIONS){
+    const cats=CATEGORIES.filter(c=>(c.section||'world')===sec.id);
+    if(!cats.length)continue;
+    const totalItems=cats.reduce((s,c)=>s+Object.values(CHECK_REGISTRY).filter(d=>d.category===c.id).length,0);
+    const sectionEl=document.createElement('div');
+    sectionEl.className='category-section';
+    sectionEl.dataset.section=sec.id;
+    sectionEl.innerHTML=`
+      <div class="section-header">
+        <span class="sh-icon">${sec.icon}</span>
+        <span class="sh-title">${esc(t('section.'+sec.id+'.title'))}</span>
+        <span class="sh-sub">${sec.ext} · ${totalItems}</span>
+      </div>
+    `;
+    for(const cat of cats){
+      const items=Object.entries(CHECK_REGISTRY).filter(([,d])=>d.category===cat.id);
+      const group=document.createElement('div');
+      group.className='category-group';
+      group.innerHTML=`
+        <div class="category-header" data-cat="${cat.id}">
+          <span class="cat-icon">${cat.icon}</span>
+          <span class="cat-name">${esc(t('cat.'+cat.id))}</span>
+          <span class="cat-count">${items.length}</span>
+          <span class="chevron">▾</span>
+        </div>
+        <div class="category-items"></div>
+      `;
+      const list=group.querySelector('.category-items');
+      for(const [id, def] of items){
+        const item=document.createElement('div');
+        item.className='catalog-item';
+        item.innerHTML=`
+          <div class="ci-title">
+            <span>${esc(ml(def.label))}</span>
+            <span class="ci-add">${esc(t('btn.add'))}</span>
+          </div>
+          <div class="ci-desc">${esc(ml(def.description))}</div>
+        `;
+        item.addEventListener('click',()=>addCheck(id));
+        list.appendChild(item);
+      }
+      group.querySelector('.category-header').addEventListener('click',()=>group.classList.toggle('collapsed'));
+      sectionEl.appendChild(group);
+    }
+    catalogRoot.appendChild(sectionEl);
+  }
+}
+
+/* ====================================================================
+   BUILDER
+   ==================================================================== */
+function renderBuilder(){
+  checkCountEl.textContent=currentConfig.checks.length;
+  if(!currentConfig.checks.length){
+    builderRoot.innerHTML=`
+      <div class="empty-builder">
+        <span class="icon">🎯</span>
+        <div>${esc(t('builder.empty.title'))}</div>
+        <div style="font-size:.82rem;margin-top:6px">${esc(t('builder.empty.hint'))}</div>
+      </div>
+    `;
+    return;
+  }
+  builderRoot.innerHTML='';
+  for(const check of currentConfig.checks){
+    const def=CHECK_REGISTRY[check.type];
+    const card=document.createElement('div');
+    card.className='check-card';
+    const defLabel=def?mlFn(def.defaultLabel, check.params||{}):'';
+    const defHint=def&&def.defaultHint?mlFn(def.defaultHint, check.params||{}):'';
+    const title=resolveLabel(check);
+    const target=def?(def.target||'world'):'world';
+    const tBadge=target==='code'?'💻 .mkcd':'🌍 .mcworld';
+    card.innerHTML=`
+      <div class="check-card-header">
+        <span class="chevron-c">▸</span>
+        <span class="ch-title">${esc(title)}</span>
+        <span class="ch-target ${target}">${tBadge}</span>
+        <span class="ch-type">${esc(check.type)}</span>
+        <button class="btn btn-sm btn-danger" data-action="del" data-id="${check.id}" title="${esc(t('btn.clearAll'))}">✕</button>
+      </div>
+      <div class="check-card-body">
+        <div class="param-hint">💡 ${esc(ml(def?def.description:null))}</div>
+        <div class="params-area"></div>
+        <div class="field" style="margin-top:10px">
+          <label>${esc(t('builder.studentLabel'))}</label>
+          <input type="text" data-field="label" value="${esc(check.label||'')}" placeholder="${esc(defLabel)}">
+          <small>${esc(t('builder.emptyDefault'))} <strong>${esc(defLabel)}</strong></small>
+        </div>
+        <div class="field" style="margin-top:10px">
+          <label>${esc(t('builder.studentHint'))}</label>
+          <textarea data-field="hint" placeholder="${esc(defHint)}">${esc(check.hint||'')}</textarea>
+          <small>${esc(t('builder.emptyDefault'))} <strong>${esc(defHint)}</strong></small>
+        </div>
+      </div>
+    `;
+    const paramsArea=card.querySelector('.params-area');
+    renderParams(paramsArea, check);
+    const header=card.querySelector('.check-card-header');
+    header.addEventListener('click',(e)=>{
+      if(e.target.closest('button'))return;
+      card.classList.toggle('open');
+    });
+    card.querySelector('[data-action=del]').addEventListener('click',e=>{
+      e.stopPropagation();
+      currentConfig.checks=currentConfig.checks.filter(c=>c.id!==check.id);
+      renderBuilder();renderPreview();
+    });
+    card.querySelectorAll('[data-field]').forEach(el=>{
+      el.addEventListener('input',()=>{
+        check[el.dataset.field]=el.value;
+        card.querySelector('.ch-title').textContent=resolveLabel(check);
+        renderPreview();
+      });
+    });
+    builderRoot.appendChild(card);
+  }
+}
+
+function renderParams(root, check){
+  const def=CHECK_REGISTRY[check.type];
+  if(!def||!def.params||!def.params.length){
+    root.innerHTML='<div class="hint">'+esc(t('builder.noParams'))+'</div>';
+    return;
+  }
+  root.innerHTML='';
+  for(let i=0;i<def.params.length;i+=2){
+    const row=document.createElement('div');
+    row.className='param-row';
+    row.appendChild(buildParamField(def.params[i], check));
+    if(def.params[i+1])row.appendChild(buildParamField(def.params[i+1], check));
+    root.appendChild(row);
+  }
+}
+
+function buildParamField(p, check){
+  const wrap=document.createElement('div');
+  wrap.className='field';
+  const lbl=document.createElement('label');
+  lbl.textContent=ml(p.label);
+  wrap.appendChild(lbl);
+  let input;
+  if(p.type==='select'){
+    input=document.createElement('select');
+    for(const opt of p.options){
+      const o=document.createElement('option');
+      o.value=opt.value;o.textContent=ml(opt.label);
+      input.appendChild(o);
+    }
+  } else {
+    input=document.createElement('input');
+    input.type=p.type==='number'?'number':'text';
+    if(p.placeholder)input.placeholder=p.placeholder;
+    if(p.min!=null)input.min=p.min;
+    if(p.max!=null)input.max=p.max;
+  }
+  const current=check.params && check.params[p.key]!=null ? check.params[p.key] : p.default;
+  input.value=current!=null?current:'';
+  input.addEventListener('input',()=>{
+    check.params=check.params||{};
+    let v=input.value;
+    if(p.type==='number')v=v===''?'':Number(v);
+    check.params[p.key]=v;
+    const card=wrap.closest('.check-card');
+    if(card){
+      const def=CHECK_REGISTRY[check.type];
+      const labelInput=card.querySelector('[data-field=label]');
+      const hintInput=card.querySelector('[data-field=hint]');
+      if(labelInput){
+        const dl=mlFn(def.defaultLabel, check.params);
+        labelInput.placeholder=dl;
+        const small=labelInput.parentElement.querySelector('small strong');
+        if(small)small.textContent=dl;
+      }
+      if(hintInput&&def.defaultHint){
+        const dh=mlFn(def.defaultHint, check.params);
+        hintInput.placeholder=dh;
+        const small=hintInput.parentElement.querySelector('small strong');
+        if(small)small.textContent=dh;
+      }
+      card.querySelector('.ch-title').textContent=resolveLabel(check);
+    }
+    renderPreview();
+  });
+  wrap.appendChild(input);
+  return wrap;
+}
+
+/* ====================================================================
+   PREVIEW
+   ==================================================================== */
+function renderRequires(){
+  const reqEl=document.getElementById('previewRequires');
+  if(!reqEl)return;
+  const counts={world:0,code:0};
+  for(const c of currentConfig.checks){
+    const def=CHECK_REGISTRY[c.type];
+    if(!def)continue;
+    const tg=def.target||'world';
+    counts[tg]=(counts[tg]||0)+1;
+  }
+  const targets=Object.keys(counts).filter(k=>counts[k]>0);
+  if(!targets.length){reqEl.style.display='none';return}
+  let labelKey='preview.req.world';
+  if(targets.length===2)labelKey='preview.req.both';
+  else if(targets[0]==='code')labelKey='preview.req.code';
+  const badges=targets.map(tg=>{
+    const icon=tg==='code'?'💻':'🌍';
+    const ext=tg==='code'?'.mkcd':'.mcworld';
+    return `<span class="pr-badge ${tg}">${icon} ${ext}<span class="pr-count">×${counts[tg]}</span></span>`;
+  }).join('');
+  reqEl.innerHTML=`<span class="pr-label">${esc(t(labelKey))}</span>${badges}`;
+  reqEl.style.display='flex';
+}
+
+function renderPreview(){
+  renderRequires();
+  if(!currentConfig.checks.length){
+    previewRoot.innerHTML='<div style="color:var(--muted);font-size:.82rem;padding:8px 0">'+esc(t('preview.empty'))+'</div>';
+    return;
+  }
+  previewRoot.innerHTML='';
+  for(const check of currentConfig.checks){
+    const label=resolveLabel(check);
+    const hint=resolveHint(check);
+    const item=document.createElement('div');
+    item.className='preview-item';
+    item.innerHTML=`
+      <span class="dot"></span>
+      <div class="pi-body">
+        <div>${esc(label)}</div>
+        ${hint?`<div class="pi-hint">${esc(hint)}</div>`:''}
+      </div>
+    `;
+    previewRoot.appendChild(item);
+  }
+}
+
+/* ====================================================================
+   ACTIONS
+   ==================================================================== */
+function addCheck(typeId){
+  const def=CHECK_REGISTRY[typeId];
+  if(!def)return;
+  const params={};
+  if(def.params)for(const p of def.params)params[p.key]=p.default;
+  currentConfig.checks.push({id:uid(),type:typeId,params,label:'',hint:''});
+  renderBuilder();renderPreview();
+  setTimeout(()=>{
+    const cards=builderRoot.querySelectorAll('.check-card');
+    const last=cards[cards.length-1];
+    if(last){last.classList.add('open');last.scrollIntoView({behavior:'smooth',block:'center'})}
+  },10);
+}
+
+function syncMetaFromInputs(){
+  currentConfig.id=lessonIdEl.value.trim()||'NEW';
+  currentConfig.name=lessonNameEl.value.trim()||t('field.lessonName.default');
+  currentConfig.intro=lessonIntroEl.value.trim()||t('field.lessonIntro.default');
+}
+
+function loadConfig(cfg){
+  currentConfig=JSON.parse(JSON.stringify(cfg));
+  if(typeof currentConfig.name==='object')currentConfig.name=ml(currentConfig.name);
+  if(typeof currentConfig.intro==='object')currentConfig.intro=ml(currentConfig.intro);
+  if(!currentConfig.name)currentConfig.name=t('field.lessonName.default');
+  if(!currentConfig.intro)currentConfig.intro=t('field.lessonIntro.default');
+  currentConfig.checks=(currentConfig.checks||[]).map(c=>({id:c.id||uid(),type:c.type,params:c.params||{},label:c.label||'',hint:c.hint||''}));
+  lessonIdEl.value=currentConfig.id||'';
+  lessonNameEl.value=currentConfig.name;lessonNameEl.dataset.autoset='';
+  lessonIntroEl.value=currentConfig.intro;lessonIntroEl.dataset.autoset='';
+  renderBuilder();renderPreview();
+}
+
+/* ====================================================================
+   SERIALIZATION & EXPORT
+   ==================================================================== */
+function serializeRegistry(){
+  // Only evaluator is needed in exported checker — labels are frozen into config
+  const parts=[];
+  for(const [id,def] of Object.entries(CHECK_REGISTRY)){
+    const target=def.target||'world';
+    parts.push(`CHECK_REGISTRY[${JSON.stringify(id)}] = { target: ${JSON.stringify(target)}, evaluator: ${def.evaluator.toString()} };`);
+  }
+  return parts.join('\n');
+}
+
+function buildCheckerHTML(){
+  syncMetaFromInputs();
+  const frozen={
+    id: currentConfig.id,
+    name: currentConfig.name,
+    intro: currentConfig.intro,
+    checks: currentConfig.checks.map(c=>({
+      id: c.id,
+      type: c.type,
+      params: c.params||{},
+      label: resolveLabel(c),
+      hint: resolveHint(c)
+    }))
+  };
+  const ui = CHECKER_UI[currentLang]||CHECKER_UI.es;
+  // unescape the backslash used in template to prevent premature tag close
+  const tpl=document.getElementById('checkerTemplate').textContent.replaceAll('<\\/script>','<\/script>');
+  return tpl
+    .replaceAll('__LANG__', currentLang)
+    .replaceAll('__LESSON_NAME__', escHtml(frozen.name))
+    .replaceAll('__LESSON_INTRO__', escHtml(frozen.intro))
+    .replaceAll('__DROP_TEXT__', ui.drop)
+    .replaceAll('__ANALYZING__', escHtml(ui.analyzing))
+    .replaceAll('__SLOT_WORLD_TITLE__', escHtml(ui.slotWorldTitle||'World file'))
+    .replaceAll('__SLOT_WORLD_EMPTY__', escHtml(ui.slotWorldEmpty||ui.drop))
+    .replaceAll('__SLOT_CODE_TITLE__', escHtml(ui.slotCodeTitle||'Code project'))
+    .replaceAll('__SLOT_CODE_EMPTY__', escHtml(ui.slotCodeEmpty||ui.drop))
+    .replace('__LESSON_CONFIG__', JSON.stringify(frozen))
+    .replace('__UI_STRINGS__', JSON.stringify(ui))
+    .replace('__REGISTRY_SRC__', serializeRegistry());
+}
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+async function exportZip(){
+  if(!currentConfig.checks.length){toast(t('toast.empty'),'error');return}
+  syncMetaFromInputs();
+  try{
+    const html=buildCheckerHTML();
+    const zip=new JSZip();
+    zip.file('index.html', html);
+    const blob=await zip.generateAsync({type:'blob'});
+    downloadBlob(blob, `${currentConfig.id||'lesson'}_checker.zip`);
+    toast(t('toast.zipOk'),'success');
+  }catch(e){console.error(e);toast(t('toast.exportError')+e.message,'error')}
+}
+
+function exportJson(){
+  syncMetaFromInputs();
+  const out={...currentConfig, _lang: currentLang};
+  const blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
+  downloadBlob(blob, `${currentConfig.id||'lesson'}_config.json`);
+  toast(t('toast.jsonOk'),'success');
+}
+
+function downloadBlob(blob, name){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download=name;
+  document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},100);
+}
+
+function importJson(file){
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const cfg=JSON.parse(r.result);
+      if(!cfg.checks||!Array.isArray(cfg.checks))throw new Error(t('toast.invalidFormat'));
+      const unknown=cfg.checks.filter(c=>!CHECK_REGISTRY[c.type]);
+      if(unknown.length)toast(t('toast.unknownTypes',{n:unknown.length}),'error');
+      loadConfig(cfg);
+      toast(t('toast.loaded'),'success');
+    }catch(e){toast(t('toast.importError')+e.message,'error')}
+  };
+  r.readAsText(file);
+}
+
+function showPresetMenu(){
+  const names=Object.keys(PRESETS);
+  const choice=prompt(t('prompt.preset',{options:names.join('\n')}), names[0]);
+  if(!choice)return;
+  const preset=PRESETS[choice.trim()];
+  if(!preset){toast(t('toast.presetNotFound'),'error');return}
+  if(currentConfig.checks.length && !confirm(t('confirm.overwrite')))return;
+  const cfg={
+    id: preset.id,
+    name: typeof preset.name==='object'?ml(preset.name):preset.name,
+    intro: preset.intro?(typeof preset.intro==='object'?ml(preset.intro):preset.intro):t('field.lessonIntro.default'),
+    checks: preset.checks.map(c=>({id:uid(),type:c.type,params:{...c.params},label:'',hint:''}))
+  };
+  loadConfig(cfg);
+  toast(t('toast.presetLoaded',{name:choice}),'success');
+}
+
+function setLang(lang){
+  if(!I18N[lang])return;
+  currentLang=lang;
+  localStorage.setItem('mcb_lang',lang);
+  applyI18n();
+  renderCatalog();
+  renderBuilder();
+  renderPreview();
+}
+
+/* ====================================================================
+   ONBOARDING TOUR
+   ==================================================================== */
+const TOUR_STEPS = [
+  {key:'s1', target:null, position:'center'},
+  {key:'s2', target:'#field-lessonId', position:'bottom'},
+  {key:'s3', target:'#field-lessonName', position:'bottom'},
+  {key:'s4', target:'#field-lessonIntro', position:'bottom'},
+  {key:'s5', target:'.pane-catalog', position:'right'},
+  {key:'s6', target:'.pane-builder', position:'left'},
+  {key:'s7', target:'#previewBanner', position:'top'},
+  {key:'s8', target:'#btnLoadPreset', position:'bottom'},
+  {key:'s9', target:'#btnExportJson', position:'bottom'},
+  {key:'s10', target:'#btnExportZip', position:'bottom'},
+  {key:'s11', target:null, position:'center'}
+];
+
+const tourState = {active:false, idx:0};
+const tourBackdrop = document.getElementById('tourBackdrop');
+const tourSpotlight = document.getElementById('tourSpotlight');
+const tourPopover = document.getElementById('tourPopover');
+const tourTitleEl = document.getElementById('tourTitle');
+const tourBodyEl = document.getElementById('tourBody');
+const tourCounterEl = document.getElementById('tourCounter');
+const tourSkipBtn = document.getElementById('tourSkip');
+const tourPrevBtn = document.getElementById('tourPrev');
+const tourNextBtn = document.getElementById('tourNext');
+
+function tourStart(){
+  tourState.active = true;
+  tourState.idx = 0;
+  tourScrollTarget();
+  tourRender();
+}
+function tourEnd(){
+  tourState.active = false;
+  tourBackdrop.classList.remove('active');
+  tourSpotlight.style.display='none';
+  tourPopover.style.display='none';
+  localStorage.setItem('mcb_tour_done','1');
+}
+function tourGo(delta){
+  const next = tourState.idx + delta;
+  if(next < 0) return;
+  if(next >= TOUR_STEPS.length){ tourEnd(); return; }
+  tourState.idx = next;
+  tourScrollTarget();
+  tourRender();
+}
+function tourScrollTarget(){
+  const step = TOUR_STEPS[tourState.idx];
+  if(!step.target) return;
+  const el = document.querySelector(step.target);
+  if(el) el.scrollIntoView({behavior:'smooth', block:'center'});
+}
+function tourRender(){
+  if(!tourState.active) return;
+  const step = TOUR_STEPS[tourState.idx];
+  tourTitleEl.textContent = t('tour.'+step.key+'.title');
+  let body = t('tour.'+step.key+'.body');
+  body = body.replace('{ID}', currentConfig.id||'M1L3');
+  tourBodyEl.textContent = body;
+  tourCounterEl.textContent = t('tour.counter', {n:tourState.idx+1, total:TOUR_STEPS.length});
+  tourSkipBtn.textContent = t('tour.skip');
+  tourPrevBtn.textContent = t('tour.prev');
+  tourPrevBtn.style.visibility = tourState.idx===0 ? 'hidden' : 'visible';
+  tourNextBtn.textContent = tourState.idx===TOUR_STEPS.length-1 ? t('tour.finish') : t('tour.next');
+
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const margin = 12;
+
+  if(step.target){
+    const el = document.querySelector(step.target);
+    if(el){
+      // Spotlight is interactive: backdrop is dimmed only via spotlight box-shadow, no pane blocks clicks.
+      tourBackdrop.classList.remove('active');
+      const r = el.getBoundingClientRect();
+      const pad = 8;
+      tourSpotlight.style.display='block';
+      tourSpotlight.style.left = (r.left - pad) + 'px';
+      tourSpotlight.style.top = (r.top - pad) + 'px';
+      tourSpotlight.style.width = (r.width + pad*2) + 'px';
+      tourSpotlight.style.height = (r.height + pad*2) + 'px';
+      tourSpotlight.classList.add('tour-pulse');
+
+      // Render popover offscreen first to measure its real height
+      tourPopover.style.transform='none';
+      tourPopover.style.display='block';
+      tourPopover.className = 'tour-popover';
+      tourPopover.style.left='-9999px';
+      tourPopover.style.top='0px';
+      const popW = tourPopover.offsetWidth || 340;
+      const popH = tourPopover.offsetHeight || 200;
+
+      let px, py, arrowClass='';
+      const fits = {
+        bottom: r.bottom + 16 + popH < vh - margin,
+        top: r.top - 16 - popH > margin,
+        right: r.right + 16 + popW < vw - margin,
+        left: r.left - 16 - popW > margin
+      };
+      // Pick the requested position if it fits, otherwise pick the first one that fits
+      const order = [step.position, 'bottom', 'top', 'right', 'left'];
+      const pick = order.find(p => fits[p]) || step.position || 'bottom';
+
+      if(pick==='bottom'){
+        py = r.bottom + 16;
+        px = Math.max(margin, Math.min(r.left, vw - popW - margin));
+        arrowClass='arrow-top';
+      } else if(pick==='top'){
+        py = r.top - popH - 16;
+        px = Math.max(margin, Math.min(r.left, vw - popW - margin));
+        arrowClass='arrow-bottom';
+      } else if(pick==='right'){
+        px = r.right + 16;
+        py = Math.max(margin, Math.min(r.top, vh - popH - margin));
+        arrowClass='arrow-left';
+      } else if(pick==='left'){
+        px = r.left - popW - 16;
+        py = Math.max(margin, Math.min(r.top, vh - popH - margin));
+        arrowClass='arrow-right';
+      }
+      // Hard clamp to viewport — popover must always stay fully visible
+      px = Math.max(margin, Math.min(px, vw - popW - margin));
+      py = Math.max(margin, Math.min(py, vh - popH - margin));
+      tourPopover.style.left = px + 'px';
+      tourPopover.style.top = py + 'px';
+      tourPopover.className = 'tour-popover ' + arrowClass;
+    } else {
+      // Target not in DOM — fall back to center
+      tourBackdrop.classList.add('active');
+      tourSpotlight.style.display='none';
+      tourPopover.style.display='block';
+      tourPopover.className = 'tour-popover';
+      tourPopover.style.left = '50%';
+      tourPopover.style.top = '50%';
+      tourPopover.style.transform = 'translate(-50%,-50%)';
+      return;
+    }
+  } else {
+    // Centered popover (welcome + finish steps) — full backdrop dim
+    tourBackdrop.classList.add('active');
+    tourSpotlight.style.display='none';
+    tourPopover.style.display='block';
+    tourPopover.className = 'tour-popover';
+    tourPopover.style.left = '50%';
+    tourPopover.style.top = '50%';
+    tourPopover.style.transform = 'translate(-50%,-50%)';
+    return;
+  }
+  tourPopover.style.transform = 'none';
+}
+
+tourSkipBtn.addEventListener('click', tourEnd);
+tourPrevBtn.addEventListener('click', () => tourGo(-1));
+tourNextBtn.addEventListener('click', () => tourGo(1));
+document.getElementById('btnTour').addEventListener('click', tourStart);
+document.addEventListener('keydown', e => {
+  if(!tourState.active) return;
+  if(e.key === 'Escape'){ tourEnd(); return; }
+  // Don't intercept arrows / Enter when typing — let user write freely
+  const tag = (e.target.tagName||'').toLowerCase();
+  const editable = tag==='input' || tag==='textarea' || tag==='select' || e.target.isContentEditable;
+  if(editable) return;
+  if(e.key === 'ArrowRight' || e.key === 'Enter') tourGo(1);
+  else if(e.key === 'ArrowLeft') tourGo(-1);
+});
+window.addEventListener('resize', () => { if(tourState.active) tourRender(); });
+window.addEventListener('scroll', () => { if(tourState.active) tourRender(); }, {passive:true, capture:true});
+
+/* ====================================================================
+   WIRING
+   ==================================================================== */
+[lessonIdEl,lessonNameEl,lessonIntroEl].forEach(el=>{
+  el.addEventListener('input',()=>{el.dataset.autoset='';syncMetaFromInputs()});
+});
+document.getElementById('btnExportZip').addEventListener('click',exportZip);
+document.getElementById('btnExportJson').addEventListener('click',exportJson);
+document.getElementById('btnImport').addEventListener('click',()=>document.getElementById('fileImport').click());
+document.getElementById('fileImport').addEventListener('change',e=>{if(e.target.files[0])importJson(e.target.files[0]);e.target.value=''});
+document.getElementById('btnLoadPreset').addEventListener('click',showPresetMenu);
+document.getElementById('btnClearAll').addEventListener('click',()=>{
+  if(!currentConfig.checks.length)return;
+  if(!confirm(t('confirm.deleteAll')))return;
+  currentConfig.checks=[];renderBuilder();renderPreview();
+});
+document.querySelectorAll('#langSwitch button').forEach(b=>{
+  b.addEventListener('click',()=>setLang(b.dataset.lang));
+});
+
+// init
+applyI18n();
+renderCatalog();
+renderBuilder();
+renderPreview();
+
+// ============ HELP / CHEATSHEET ============
+
+const HELP_RECIPES = [
+  { icon:'🌍', titleKey:'help.recipe.world', tagKey:'help.recipe.world.tag',
+    checks:['world.valid','world.named','world.gamemode_is','world.seed_set'] },
+  { icon:'👤', titleKey:'help.recipe.npc', tagKey:'help.recipe.npc.tag',
+    checks:['npc.min_count','npc.all_named','npc.all_have_dialogue','npc.uses_format_codes'] },
+  { icon:'🏰', titleKey:'help.recipe.structure', tagKey:'help.recipe.structure.tag',
+    checks:['world.valid','world.named','npc.min_count','sign.min_count','entity.unique_types_min'] },
+  { icon:'🤖', titleKey:'help.recipe.code', tagKey:'help.recipe.code.tag',
+    checks:['code.valid','code.chat_command','code.has_loop','code.loop_contains','code.total_forward_min'] },
+  { icon:'🎯', titleKey:'help.recipe.hybrid', tagKey:'help.recipe.hybrid.tag',
+    checks:['world.valid','world.named','entity.min_count_of','code.chat_command','code.nested_loops','code.uses_block'] },
+];
+
+const helpOverlay = document.getElementById('helpOverlay');
+const helpBody = document.getElementById('helpBody');
+
+function buildHelpHTML(){
+  const t1=t('help.section.recipes'), t2=t('help.section.files'), t3=t('help.section.all');
+  let h='';
+
+  // Section 1: recipes
+  h+=`<div class="help-section"><h3>${esc(t1)}</h3><div class="recipes-grid">`;
+  for(const r of HELP_RECIPES){
+    const checks=r.checks.map(id=>{
+      const def=CHECK_REGISTRY[id];
+      const tg=def?(def.target||'world'):'world';
+      return `<div><span class="rc-tag ${tg}">${tg==='code'?'💻':'🌍'}</span>${id}</div>`;
+    }).join('');
+    h+=`
+      <div class="recipe-card">
+        <div class="recipe-head">
+          <span class="recipe-icon">${r.icon}</span>
+          <span class="recipe-title">${esc(t(r.titleKey))}</span>
+          <span class="recipe-tag">${esc(t(r.tagKey))}</span>
+        </div>
+        <div class="recipe-checks">${checks}</div>
+      </div>`;
+  }
+  h+=`</div></div>`;
+
+  // Section 2: file diagram
+  const worldCount=Object.values(CHECK_REGISTRY).filter(d=>(d.target||'world')==='world').length;
+  const codeCount =Object.values(CHECK_REGISTRY).filter(d=>(d.target||'world')==='code').length;
+  h+=`
+    <div class="help-section">
+      <h3>${esc(t2)}</h3>
+      <div class="file-diagram">
+        <div class="file-card world">
+          <div class="fc-icon">🌍</div>
+          <div class="fc-ext">.mcworld</div>
+          <div class="fc-title">${esc(t('help.file.world.title'))}</div>
+          <div class="fc-desc">${esc(t('help.file.world.desc'))}</div>
+          <div class="fc-count">${esc(t('help.file.checks',{n:worldCount}))}</div>
+        </div>
+        <div class="file-card code">
+          <div class="fc-icon">💻</div>
+          <div class="fc-ext">.mkcd</div>
+          <div class="fc-title">${esc(t('help.file.code.title'))}</div>
+          <div class="fc-desc">${esc(t('help.file.code.desc'))}</div>
+          <div class="fc-count">${esc(t('help.file.checks',{n:codeCount}))}</div>
+        </div>
+      </div>
+    </div>`;
+
+  // Section 3: all checks list
+  h+=`<div class="help-section"><h3>${esc(t3)}</h3>`;
+  for(const cat of CATEGORIES){
+    const items=Object.entries(CHECK_REGISTRY).filter(([,d])=>d.category===cat.id);
+    if(!items.length)continue;
+    h+=`<div class="checks-list-cat"><h4>${cat.icon} ${esc(t('cat.'+cat.id))} (${items.length})</h4><div class="checks-list-rows">`;
+    for(const [id,def] of items){
+      h+=`<div class="check-row">
+        <span class="cr-mark">✓</span>
+        <span class="cr-id">${esc(id)}</span>
+        <span class="cr-desc">${esc(ml(def.label))}. ${esc(ml(def.description))}</span>
+      </div>`;
+    }
+    h+=`</div></div>`;
+  }
+  h+=`</div>`;
+
+  return h;
+}
+
+function openHelp(){
+  helpBody.innerHTML=buildHelpHTML();
+  document.getElementById('helpTitle').textContent=t('help.title');
+  helpOverlay.classList.add('active');
+}
+function closeHelp(){ helpOverlay.classList.remove('active'); }
+
+document.getElementById('btnHelp').addEventListener('click',openHelp);
+document.getElementById('helpCloseBtn').addEventListener('click',closeHelp);
+document.getElementById('helpPrintBtn').addEventListener('click',()=>window.print());
+helpOverlay.addEventListener('click',e=>{if(e.target===helpOverlay)closeHelp()});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&helpOverlay.classList.contains('active'))closeHelp();
+});
+
+// Auto-launch tour on first visit
+if(!localStorage.getItem('mcb_tour_done')){
+  setTimeout(tourStart, 600);
+}
+
+// Test hook (no-op in production; used by scripts/test-export.js)
+if(typeof window!=='undefined'){
+  window.__BUILDER__={get PRESETS(){return PRESETS},get CHECK_REGISTRY(){return CHECK_REGISTRY},get currentConfig(){return currentConfig},set currentConfig(v){currentConfig=v},buildCheckerHTML,loadConfig};
+}
+</script>
+
+</body>
+</html>

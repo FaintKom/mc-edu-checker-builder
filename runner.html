@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Minecraft Code Checker (.mkcd)</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lzma/2.3.0/lzma-min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/acorn/8.11.3/acorn.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#1a1a2e;--surface:#16213e;--surface2:#1a2744;--surface3:#233158;
+  --accent:#e94560;--accent2:#4dabf7;--text:#ecf0f1;--dim:#95a5a6;
+  --green:#2ecc71;--yellow:#f39c12;--red:#e74c3c;
+  --code-bg:#0f1422;--border:rgba(255,255,255,.08);
+}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5}
+.header{text-align:center;padding:22px 16px 14px;background:linear-gradient(135deg,var(--surface),var(--surface2))}
+.header h1{font-size:1.5rem;font-weight:700;letter-spacing:.4px}
+.header p{color:var(--dim);font-size:.88rem;margin-top:5px;max-width:680px;margin-inline:auto}
+.lang-switch{position:absolute;top:14px;right:18px;display:inline-flex;background:var(--bg);border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.lang-switch button{background:transparent;border:none;color:var(--dim);padding:5px 9px;font-size:.75rem;font-weight:600;cursor:pointer;letter-spacing:.5px}
+.lang-switch button.active{background:var(--accent2);color:#fff}
+.container{max-width:880px;margin:0 auto;padding:18px}
+
+.card{background:var(--surface);border-radius:12px;padding:18px;margin-bottom:18px;border:1px solid var(--border)}
+
+.drop-zone{border:2px dashed rgba(255,255,255,.18);border-radius:10px;padding:26px 16px;text-align:center;cursor:pointer;transition:all .2s;position:relative}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--accent);background:rgba(233,69,96,.06)}
+.drop-zone .icon{font-size:1.8rem;display:block;margin-bottom:6px}
+.drop-zone p{color:var(--dim);font-size:.88rem}
+.drop-zone .filename{color:var(--green);font-size:.85rem;margin-top:6px;word-break:break-all}
+.drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer}
+
+.error-msg{background:rgba(231,76,60,.12);border:1px solid rgba(231,76,60,.35);border-radius:8px;padding:10px 14px;color:#fda;font-size:.85rem;margin-top:10px;display:none}
+.error-msg.show{display:block}
+
+.spinner-wrap{text-align:center;padding:14px;display:none}
+.spinner-wrap.show{display:block}
+.spinner{display:inline-block;width:20px;height:20px;border:3px solid rgba(255,255,255,.2);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.score-card{display:flex;align-items:center;gap:14px;padding:14px 18px;border-radius:10px;margin-bottom:14px}
+.score-card.pass{background:linear-gradient(135deg,rgba(46,204,113,.15),rgba(46,204,113,.05));border:1px solid rgba(46,204,113,.4)}
+.score-card.fail{background:linear-gradient(135deg,rgba(243,156,18,.12),rgba(243,156,18,.04));border:1px solid rgba(243,156,18,.35)}
+.score-card .num{font-size:1.6rem;font-weight:800}
+.score-card.pass .num{color:var(--green)}
+.score-card.fail .num{color:var(--yellow)}
+.score-card .text{flex:1;font-size:.92rem}
+.score-card .text strong{display:block;font-size:1rem;margin-bottom:2px}
+
+.checks{display:flex;flex-direction:column;gap:8px}
+.check{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px}
+.check.pass{border-left:3px solid var(--green)}
+.check.fail{border-left:3px solid var(--red)}
+.check .marker{font-size:1.2rem;line-height:1;flex-shrink:0;margin-top:1px}
+.check.pass .marker{color:var(--green)}
+.check.fail .marker{color:var(--red)}
+.check .body{flex:1;min-width:0}
+.check .label{font-weight:500;font-size:.9rem}
+.check .detail{color:var(--dim);font-size:.8rem;margin-top:3px;font-family:Consolas,Monaco,monospace}
+
+.code-preview{background:var(--code-bg);border-radius:8px;padding:12px 14px;font-family:Consolas,'Cascadia Mono',monospace;font-size:.78rem;color:#cbd;max-height:280px;overflow:auto;border:1px solid var(--border);white-space:pre;tab-size:2}
+.code-preview .key{color:#f0a;font-weight:500}
+
+.preset-row{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+.preset-row label{font-size:.78rem;color:var(--dim);text-transform:uppercase;letter-spacing:.6px}
+.preset-row select{padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.85rem;flex:1;min-width:200px}
+
+.lesson-meta h2{font-size:1.05rem;margin-bottom:5px}
+.lesson-meta p{color:var(--dim);font-size:.85rem}
+
+details.diag{margin-top:14px;font-size:.8rem;color:var(--dim)}
+details.diag summary{cursor:pointer;user-select:none}
+details.diag summary:hover{color:var(--text)}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:8px 18px;border:1px solid var(--border);border-radius:6px;background:var(--surface3);color:var(--text);font-size:.85rem;font-weight:600;cursor:pointer;text-decoration:none}
+.btn:hover{border-color:var(--accent2)}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="lang-switch">
+    <button data-lang="es">ES</button>
+    <button data-lang="ru" class="active">RU</button>
+    <button data-lang="en">EN</button>
+  </div>
+  <h1 id="hdrTitle">🧩 Проверка кода Minecraft</h1>
+  <p id="hdrSub">Загрузи файл проекта <code>.mkcd</code> из Code Builder, чтобы автоматически проверить решение.</p>
+</div>
+
+<div class="container">
+
+  <div class="card">
+    <div class="preset-row">
+      <label id="lblPreset">Урок:</label>
+      <select id="presetSelect"></select>
+    </div>
+    <div class="lesson-meta" id="lessonMeta"></div>
+  </div>
+
+  <div class="card">
+    <div class="drop-zone" id="dropZone">
+      <input type="file" id="fileInput" accept=".mkcd">
+      <span class="icon">📦</span>
+      <p id="dropText">Перетащи <strong>.mkcd</strong> сюда или нажми чтобы выбрать</p>
+      <div class="filename" id="fileName"></div>
+    </div>
+    <div class="error-msg" id="errorMsg"></div>
+    <div class="spinner-wrap" id="spinnerWrap"><span class="spinner"></span> <span id="analyzingText">Разбираю проект…</span></div>
+  </div>
+
+  <div id="resultsSection" style="display:none">
+    <div id="scoreCard"></div>
+    <div class="card">
+      <div class="checks" id="checksList"></div>
+      <details class="diag">
+        <summary id="diagToggle">Показать код ученика</summary>
+        <pre class="code-preview" id="codePreview"></pre>
+      </details>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============================================================== -->
+<!-- ENGINE (inline copy of engine.js)                                -->
+<!-- ============================================================== -->
+<script>
+(function () {
+'use strict';
+
+const SKIP_KEYS = new Set(['loc','start','end','range','parent','sourceType','raw']);
+
+function walk(node, visit, parent) {
+  if (!node || typeof node !== 'object') return;
+  if (Array.isArray(node)) { for (const n of node) walk(n, visit, parent); return; }
+  if (typeof node.type === 'string') visit(node, parent);
+  for (const k of Object.keys(node)) {
+    if (SKIP_KEYS.has(k)) continue;
+    const v = node[k];
+    if (v && typeof v === 'object') walk(v, visit, node);
+  }
+}
+
+function walkAncestors(root, visit) {
+  function rec(n, stack) {
+    if (!n || typeof n !== 'object') return;
+    if (Array.isArray(n)) { for (const c of n) rec(c, stack); return; }
+    if (typeof n.type === 'string') visit(n, stack);
+    const next = (typeof n.type === 'string') ? stack.concat([n]) : stack;
+    for (const k of Object.keys(n)) {
+      if (SKIP_KEYS.has(k)) continue;
+      const v = n[k];
+      if (v && typeof v === 'object') rec(v, next);
+    }
+  }
+  rec(root, []);
+}
+
+function memberName(node) {
+  if (!node) return null;
+  if (node.type === 'Identifier') return node.name;
+  if (node.type === 'MemberExpression') {
+    const obj = memberName(node.object);
+    const prop = node.computed ? null : (node.property && node.property.name);
+    if (!obj || !prop) return null;
+    return obj + '.' + prop;
+  }
+  return null;
+}
+function callName(c) { return (c && c.type === 'CallExpression') ? memberName(c.callee) : null; }
+function identName(n) { return n && n.type === 'Identifier' ? n.name : null; }
+function literalValue(n) {
+  if (!n) return undefined;
+  if (n.type === 'Literal') return n.value;
+  if (n.type === 'TemplateLiteral' && n.expressions.length === 0) return n.quasis.map(q => q.value.cooked).join('');
+  if (n.type === 'UnaryExpression' && n.operator === '-' && n.argument.type === 'Literal') return -n.argument.value;
+  return undefined;
+}
+
+function staticIterCount(forNode) {
+  if (forNode.type !== 'ForStatement') return null;
+  const init = forNode.init, test = forNode.test, upd = forNode.update;
+  if (!init || !test || !upd) return null;
+  let startVal = null, varName = null;
+  if (init.type === 'VariableDeclaration' && init.declarations.length === 1) {
+    const d = init.declarations[0];
+    if (d.id && d.id.type === 'Identifier' && d.init) {
+      varName = d.id.name;
+      const v = literalValue(d.init);
+      if (typeof v === 'number') startVal = v;
+    }
+  }
+  if (varName == null || startVal == null) return null;
+  if (test.type !== 'BinaryExpression') return null;
+  if (!(test.operator === '<' || test.operator === '<=')) return null;
+  if (!(test.left && test.left.type === 'Identifier' && test.left.name === varName)) return null;
+  const endVal = literalValue(test.right);
+  if (typeof endVal !== 'number') return null;
+  let step = null;
+  if (upd.type === 'UpdateExpression' && upd.operator === '++') step = 1;
+  else if (upd.type === 'AssignmentExpression' && upd.operator === '+=' && literalValue(upd.right) === 1) step = 1;
+  if (step !== 1) return null;
+  const iters = (test.operator === '<') ? (endVal - startVal) : (endVal - startVal + 1);
+  return Math.max(0, iters | 0);
+}
+
+function createEngine(source) {
+  let ast = null, err = null;
+  try {
+    ast = acorn.parse(source, {
+      ecmaVersion: 'latest', sourceType: 'script', locations: true,
+      allowReturnOutsideFunction: true, allowAwaitOutsideFunction: true
+    });
+  } catch (e) { err = e; }
+
+  const loops = [], chatHandlers = [], identifiers = new Set();
+  if (ast) {
+    walk(ast, (n) => {
+      if (n.type === 'CallExpression') {
+        const name = callName(n);
+        if (name === 'player.onChat' && n.arguments.length >= 2) {
+          const cmd = literalValue(n.arguments[0]);
+          const fn  = n.arguments[1];
+          if (typeof cmd === 'string' && fn && (fn.type === 'FunctionExpression' || fn.type === 'ArrowFunctionExpression')) {
+            chatHandlers.push({ name: cmd, body: fn.body, node: n });
+          }
+        }
+      }
+      if (n.type === 'ForStatement' || n.type === 'WhileStatement' || n.type === 'DoWhileStatement' || n.type === 'ForOfStatement' || n.type === 'ForInStatement') loops.push(n);
+      if (n.type === 'Identifier') identifiers.add(n.name);
+    });
+  }
+
+  function callsByName(name, scope) {
+    const root = scope || ast; const out = []; if (!root) return out;
+    walk(root, n => { if (n.type === 'CallExpression' && callName(n) === name) out.push(n); });
+    return out;
+  }
+  function loopDepthRec(node, depth) {
+    let max = depth;
+    walk(node, (n) => {
+      if (n === node) return;
+      if (n.type === 'ForStatement' || n.type === 'WhileStatement' || n.type === 'DoWhileStatement') {
+        const inner = loopDepthRec(n, depth + 1);
+        if (inner > max) max = inner;
+      }
+    });
+    return max;
+  }
+
+  const api = {
+    ast, walk, callName, memberName, literalValue, identName,
+    hasChatCommand: (name) => chatHandlers.some(h => h.name === name),
+    chatCommandNames: () => chatHandlers.map(h => h.name),
+    chatHandler: (name) => chatHandlers.find(h => h.name === name) || null,
+    callsByName,
+    countCalls: (name, scope) => callsByName(name, scope).length,
+    hasAnyLoop: () => loops.length > 0,
+    loopCount: () => loops.length,
+    maxLoopDepth: () => {
+      let max = 0;
+      for (const l of loops) { const d = 1 + loopDepthRec(l, 0); if (d > max) max = d; }
+      return max;
+    },
+    hasLoopWithCalls: (required) => {
+      for (const l of loops) {
+        const inside = new Set();
+        walk(l, n => { if (n.type === 'CallExpression') { const cn = callName(n); if (cn) inside.add(cn); } });
+        if (required.every(c => inside.has(c))) return true;
+      }
+      return false;
+    },
+    totalAgentForward: () => {
+      let total = 0;
+      walkAncestors(ast, (n, stack) => {
+        if (n.type !== 'CallExpression' || callName(n) !== 'agent.move') return;
+        const dir = identName(n.arguments[0]);
+        const dist = literalValue(n.arguments[1]);
+        if (dir !== 'FORWARD' || typeof dist !== 'number') return;
+        let mult = 1;
+        for (const a of stack) if (a.type === 'ForStatement') { const k = staticIterCount(a); if (k != null) mult *= k; }
+        total += dist * mult;
+      });
+      return total;
+    },
+    callsSetItemMatching: (m) => {
+      const re = m instanceof RegExp ? m : null;
+      for (const c of callsByName('agent.setItem')) {
+        const id = identName(c.arguments[0]); if (!id) continue;
+        if (re ? re.test(id) : id === m) return true;
+      }
+      return false;
+    },
+    setItemBlocks: () => callsByName('agent.setItem').map(c => identName(c.arguments[0])).filter(Boolean),
+    setsAssist: (flag, value) => {
+      for (const c of callsByName('agent.setAssist')) {
+        const f = identName(c.arguments[0]);
+        const v = literalValue(c.arguments[1]);
+        if (f === flag && (value === undefined || v === value)) return true;
+      }
+      return false;
+    },
+    spawnsMob: (mob) => {
+      const re = mob instanceof RegExp ? mob : null;
+      for (const c of callsByName('mobs.spawn')) {
+        const m = identName(c.arguments[0]); if (!m) continue;
+        if (re ? re.test(m) : m === mob) return true;
+      }
+      return false;
+    },
+    usesIdentifier: (name) => identifiers.has(name),
+  };
+
+  function evaluate(checks) {
+    if (!ast) return checks.map(c => ({ id:c.id, label:resolveLabel(c.label), passed:false, detail:'⚠ Ошибка парсинга: ' + (err && err.message || 'unknown') }));
+    return checks.map(c => {
+      let res;
+      try { res = c.test(api); }
+      catch (e) { return { id:c.id, label:resolveLabel(c.label), passed:false, detail:'⚠ Ошибка чека: ' + e.message }; }
+      if (typeof res === 'boolean') return { id:c.id, label:resolveLabel(c.label), passed:res, detail:'' };
+      return { id:c.id, label:resolveLabel(c.label), passed:!!(res && res.passed), detail:(res && res.detail) || '' };
+    });
+  }
+
+  return { parsed: !!ast, parseError: err, api, evaluate };
+}
+
+window.MkcdEngine = { createEngine };
+})();
+</script>
+
+<!-- ============================================================== -->
+<!-- PRESETS                                                          -->
+<!-- ============================================================== -->
+<script>
+const PRESETS = {
+
+  'agent-fence': {
+    title: { ru:'Agent Fence — забор 8×8', es:'Agent Fence — cerca 8×8', en:'Agent Fence — 8×8 fence' },
+    intro: {
+      ru:'Запрограммируй агента построить забор-квадрат 8×8 по команде в чате.',
+      es:'Programa al agente para construir una cerca cuadrada 8×8 con un comando del chat.',
+      en:'Program the agent to build an 8×8 square fence on a chat command.' },
+    checks: [
+      { id:'chat.run', label:{ ru:'Заведена команда чата "run"', es:'Comando de chat "run" definido', en:'Chat command "run" defined' },
+        test: api => api.hasChatCommand('run') ||
+                     ({ passed:false, detail:'Найдено: ' + (api.chatCommandNames().join(', ') || '—') }) },
+      { id:'fence.block', label:{ ru:'В инвентаре блок типа *_FENCE', es:'En el inventario un bloque *_FENCE', en:'Inventory contains a *_FENCE block' },
+        test: api => api.callsSetItemMatching(/_FENCE$/) ||
+                     ({ passed:false, detail:'Использованы: ' + (api.setItemBlocks().join(', ') || '—') }) },
+      { id:'assist.destroy', label:{ ru:'Включён DESTROY_OBSTACLES', es:'DESTROY_OBSTACLES activado', en:'DESTROY_OBSTACLES enabled' },
+        test: api => api.setsAssist('DESTROY_OBSTACLES', true) },
+      { id:'loop.any', label:{ ru:'Использован хотя бы один цикл', es:'Se usa al menos un bucle', en:'At least one loop is used' },
+        test: api => api.hasAnyLoop() ||
+                     ({ passed:false, detail:'Циклов нет — забор скорее всего собран копипастой' }) },
+      { id:'loop.turn-move', label:{ ru:'В цикле есть поворот И движение', es:'El bucle gira Y avanza', en:'Loop body has both turn AND move' },
+        test: api => api.hasLoopWithCalls(['agent.turn', 'agent.move']) },
+      { id:'distance.32', label:{ ru:'Агент проходит ≥ 32 блоков вперёд', es:'El agente recorre ≥ 32 bloques al frente', en:'Agent moves ≥ 32 blocks forward' },
+        test: api => { const d = api.totalAgentForward(); return { passed:d >= 32, detail:'Сумма (с учётом циклов): ' + d }; } },
+    ]
+  },
+
+  'm2l1-barn': {
+    title: { ru:'M2L1 — амбар', es:'M2L1 — granero', en:'M2L1 — barn' },
+    intro: { ru:'Команда "barn" строит амбар для лошади.', es:'El comando "barn" construye un granero para un caballo.', en:'The "barn" command builds a barn for a horse.' },
+    checks: [
+      { id:'chat.barn', label:{ ru:'Команда "barn" заведена', es:'Comando "barn" definido', en:'Chat command "barn" defined' }, test: api => api.hasChatCommand('barn') },
+      { id:'planks',   label:{ ru:'Используются доски (PLANKS_*)', es:'Se usan tablones PLANKS_*', en:'Planks used (PLANKS_*)' }, test: api => api.callsSetItemMatching(/^PLANKS_/) },
+      { id:'fence',    label:{ ru:'Используется забор', es:'Se usa cerca', en:'Fence used' }, test: api => api.callsSetItemMatching(/_FENCE$/) },
+      { id:'hay',      label:{ ru:'Используется HAY_BLOCK', es:'Se usa HAY_BLOCK', en:'HAY_BLOCK used' }, test: api => api.callsSetItemMatching('HAY_BLOCK') },
+      { id:'nested',   label:{ ru:'Вложенные циклы (≥ 2)', es:'Bucles anidados (≥ 2)', en:'Nested loops (depth ≥ 2)' },
+        test: api => { const d = api.maxLoopDepth(); return { passed:d >= 2, detail:'Глубина: ' + d }; } },
+      { id:'horse',    label:{ ru:'Заспаунен HORSE', es:'HORSE generado', en:'HORSE spawned' }, test: api => api.spawnsMob('HORSE') },
+      { id:'destroy',  label:{ ru:'Включён DESTROY_OBSTACLES', es:'DESTROY_OBSTACLES activado', en:'DESTROY_OBSTACLES enabled' }, test: api => api.setsAssist('DESTROY_OBSTACLES', true) },
+    ]
+  },
+
+  'm2l1-house': {
+    title: { ru:'M2L1 — дом', es:'M2L1 — casa', en:'M2L1 — house' },
+    intro: { ru:'Команда "house" строит дом параметрической высоты и ширины.', es:'El comando "house" construye una casa con ancho/alto parametrizados.', en:'The "house" command builds a parametric-size house.' },
+    checks: [
+      { id:'chat.house', label:{ ru:'Команда "house" с двумя параметрами', es:'Comando "house" con dos parámetros', en:'"house" with two parameters' },
+        test: api => {
+          const h = api.chatHandler('house');
+          if (!h) return { passed:false, detail:'Команды нет' };
+          const fn = h.node.arguments[1];
+          const argc = (fn && fn.params || []).length;
+          return { passed: argc >= 2, detail: 'Параметров: ' + argc };
+        } },
+      { id:'tracePath', label:{ ru:'Используется builder.tracePath', es:'Se usa builder.tracePath', en:'Uses builder.tracePath' }, test: api => api.countCalls('builder.tracePath') > 0 },
+      { id:'two-loops', label:{ ru:'Минимум 2 цикла', es:'Al menos 2 bucles', en:'At least 2 loops' }, test: api => api.loopCount() >= 2 },
+      { id:'condition', label:{ ru:'Есть if/else (для чётной/нечётной ширины)', es:'Hay if/else (para ancho par/impar)', en:'Has if/else (for even/odd width)' },
+        test: api => { let hit = false; api.walk(api.ast, n => { if (n.type === 'IfStatement') hit = true; }); return hit; } },
+      { id:'glass',     label:{ ru:'Размещается стекло (GLASS)', es:'Se coloca GLASS', en:'GLASS placed' }, test: api => api.usesIdentifier('GLASS') },
+    ]
+  },
+
+  'm2l1-farm': {
+    title: { ru:'M2L1 — ферма', es:'M2L1 — granja', en:'M2L1 — farm' },
+    intro: { ru:'Команда "farm" вспахивает грядки и сажает семена.', es:'El comando "farm" labra y planta semillas.', en:'The "farm" command tills and plants seeds.' },
+    checks: [
+      { id:'chat.farm', label:{ ru:'Команда "farm" заведена', es:'Comando "farm" definido', en:'"farm" defined' }, test: api => api.hasChatCommand('farm') },
+      { id:'till',      label:{ ru:'Используется agent.till', es:'Se usa agent.till', en:'Uses agent.till' }, test: api => api.countCalls('agent.till') > 0 },
+      { id:'seeds',     label:{ ru:'В инвентаре SEEDS', es:'SEEDS en inventario', en:'SEEDS in inventory' }, test: api => api.callsSetItemMatching('SEEDS') },
+      { id:'fence',     label:{ ru:'Загорожена забором', es:'Cercada con valla', en:'Fenced in' }, test: api => api.callsSetItemMatching(/_FENCE$/) },
+      { id:'nested',    label:{ ru:'Вложенные циклы (≥ 2)', es:'Bucles anidados (≥ 2)', en:'Nested loops (≥ 2)' }, test: api => api.maxLoopDepth() >= 2 },
+    ]
+  },
+
+};
+</script>
+
+<!-- ============================================================== -->
+<!-- UI + LMS bridge                                                  -->
+<!-- ============================================================== -->
+<script>
+(function(){
+'use strict';
+
+const UI_TEXT = {
+  ru: { hdrTitle:'🧩 Проверка кода Minecraft', hdrSub:'Загрузи файл проекта <code>.mkcd</code> из Code Builder, чтобы автоматически проверить решение.',
+        lblPreset:'Урок:', dropText:'Перетащи <strong>.mkcd</strong> сюда или нажми чтобы выбрать', analyzing:'Разбираю проект…',
+        invalidFile:'Это не файл .mkcd', readError:'Не удалось прочитать файл',
+        scoreOk:'Все проверки пройдены', scoreFail:'Ещё надо доработать',
+        scoreOkSub:'Решение засчитано', scoreFailSub:n => `Не пройдено: ${n}`,
+        diagShow:'Показать код ученика', diagHide:'Скрыть код' },
+  es: { hdrTitle:'🧩 Verificador de código Minecraft', hdrSub:'Sube el archivo <code>.mkcd</code> de Code Builder para revisar la solución.',
+        lblPreset:'Lección:', dropText:'Arrastra el <strong>.mkcd</strong> aquí o haz clic', analyzing:'Analizando proyecto…',
+        invalidFile:'Esto no es un archivo .mkcd', readError:'No pude leer el archivo',
+        scoreOk:'¡Todo correcto!', scoreFail:'Falta ajustar algo',
+        scoreOkSub:'Solución aprobada', scoreFailSub:n => `Sin pasar: ${n}`,
+        diagShow:'Mostrar código del estudiante', diagHide:'Ocultar código' },
+  en: { hdrTitle:'🧩 Minecraft Code Checker', hdrSub:'Upload your <code>.mkcd</code> Code Builder project to check it automatically.',
+        lblPreset:'Lesson:', dropText:'Drop your <strong>.mkcd</strong> here or click to select', analyzing:'Parsing project…',
+        invalidFile:'Not a .mkcd file', readError:'Failed to read file',
+        scoreOk:'All checks passed', scoreFail:'Needs more work',
+        scoreOkSub:'Solution accepted', scoreFailSub:n => `${n} not passed`,
+        diagShow:'Show student code', diagHide:'Hide code' },
+};
+
+let currentLang = (new URLSearchParams(location.search).get('lang') || 'ru').toLowerCase();
+if (!UI_TEXT[currentLang]) currentLang = 'ru';
+
+const $ = id => document.getElementById(id);
+const dropZone = $('dropZone'), fileInput = $('fileInput'), fileNameEl = $('fileName'),
+      errorMsg = $('errorMsg'), spinnerWrap = $('spinnerWrap'),
+      resultsSection = $('resultsSection'), checksList = $('checksList'),
+      scoreCard = $('scoreCard'), codePreview = $('codePreview'),
+      presetSelect = $('presetSelect'), lessonMeta = $('lessonMeta');
+
+window.resolveLabel = function (label) {
+  if (!label) return '';
+  if (typeof label === 'string') return label;
+  return label[currentLang] || label.en || label.ru || label.es || '';
+};
+function ml(obj) { return resolveLabel(obj); }
+
+function setLang(lang){
+  currentLang = lang;
+  document.querySelectorAll('.lang-switch button').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+  const t = UI_TEXT[lang];
+  $('hdrTitle').innerText = t.hdrTitle;
+  $('hdrSub').innerHTML = t.hdrSub;
+  $('lblPreset').innerText = t.lblPreset;
+  $('dropText').innerHTML = t.dropText;
+  $('analyzingText').innerText = t.analyzing;
+  $('diagToggle').innerText = t.diagShow;
+  rebuildPresetSelect();
+  // Re-render last result if any
+  if (lastResult) renderResults(lastResult);
+}
+
+function rebuildPresetSelect(){
+  const cur = presetSelect.value || Object.keys(PRESETS)[0];
+  presetSelect.innerHTML = '';
+  for (const [id, p] of Object.entries(PRESETS)) {
+    const o = document.createElement('option');
+    o.value = id; o.textContent = ml(p.title);
+    presetSelect.appendChild(o);
+  }
+  presetSelect.value = cur;
+  renderLessonMeta();
+}
+
+function renderLessonMeta(){
+  const p = PRESETS[presetSelect.value];
+  if (!p) { lessonMeta.innerHTML = ''; return; }
+  lessonMeta.innerHTML = `<h2>${ml(p.title)}</h2><p>${ml(p.intro)}</p>`;
+}
+
+document.querySelectorAll('.lang-switch button').forEach(b => b.addEventListener('click', () => setLang(b.dataset.lang)));
+presetSelect.addEventListener('change', () => {
+  renderLessonMeta();
+  // re-evaluate if file already loaded
+  if (lastSource) runChecks(lastSource);
+});
+
+// drag/drop
+fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragover'); if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]); });
+
+let lastSource = null, lastResult = null;
+
+function showError(msg){ errorMsg.textContent = msg; errorMsg.classList.add('show'); }
+function hideError(){ errorMsg.classList.remove('show'); }
+
+async function handleFile(file){
+  if (!file) return;
+  if (!file.name.toLowerCase().endsWith('.mkcd')) { showError(UI_TEXT[currentLang].invalidFile); return; }
+  hideError();
+  fileNameEl.textContent = file.name + ' (' + (file.size/1024).toFixed(1) + ' KB)';
+  spinnerWrap.classList.add('show');
+  resultsSection.style.display = 'none';
+
+  try {
+    const buf = new Uint8Array(await file.arrayBuffer());
+    const text = await decompressMkcd(buf);
+    const wrapper = JSON.parse(text);
+    const source = JSON.parse(wrapper.source);
+    const mainTs = source['main.ts'] || '';
+    if (!mainTs) throw new Error('main.ts not found');
+    lastSource = mainTs;
+    runChecks(mainTs);
+  } catch (e) {
+    spinnerWrap.classList.remove('show');
+    showError(UI_TEXT[currentLang].readError + ': ' + e.message);
+  }
+}
+
+function decompressMkcd(uint8){
+  return new Promise((resolve, reject) => {
+    try {
+      // LZMA-JS expects a regular Array, ArrayBuffer, or typed array
+      LZMA.decompress(uint8, function(result, error){
+        if (error) return reject(error);
+        // result is string for text payloads, Int8Array for binary
+        if (typeof result === 'string') return resolve(result);
+        try {
+          const u8 = new Uint8Array(result);
+          resolve(new TextDecoder('utf-8').decode(u8));
+        } catch (e) { reject(e); }
+      });
+    } catch (e) { reject(e); }
+  });
+}
+
+function runChecks(mainTs){
+  const preset = PRESETS[presetSelect.value];
+  if (!preset) return;
+  const eng = window.MkcdEngine.createEngine(mainTs);
+  const results = eng.evaluate(preset.checks);
+  const passed = results.filter(r => r.passed).length;
+  const total = results.length;
+  lastResult = { results, passed, total, mainTs, preset };
+
+  spinnerWrap.classList.remove('show');
+  resultsSection.style.display = 'block';
+  renderResults(lastResult);
+  pushToLms(passed, total);
+}
+
+function renderResults(state){
+  const t = UI_TEXT[currentLang];
+  const all = state.passed === state.total;
+  scoreCard.innerHTML = `
+    <div class="score-card ${all ? 'pass' : 'fail'}">
+      <div class="num">${state.passed}/${state.total}</div>
+      <div class="text"><strong>${all ? t.scoreOk : t.scoreFail}</strong>${all ? t.scoreOkSub : t.scoreFailSub(state.total - state.passed)}</div>
+    </div>`;
+  checksList.innerHTML = state.results.map(r => `
+    <div class="check ${r.passed ? 'pass' : 'fail'}">
+      <span class="marker">${r.passed ? '✓' : '✗'}</span>
+      <div class="body">
+        <div class="label">${escapeHtml(r.label)}</div>
+        ${r.detail ? `<div class="detail">${escapeHtml(r.detail)}</div>` : ''}
+      </div>
+    </div>`).join('');
+  codePreview.textContent = state.mainTs;
+}
+
+function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function pushToLms(score, total){
+  const passed = score === total;
+  try {
+    window.parent.postMessage({type:'level-save-status', data:{ isPassed: passed, status: passed ? 'complete' : 'attempted' }}, '*');
+    window.parent.postMessage({type:'level-save-state', data: JSON.stringify({ score, total, lessonId: presetSelect.value, lang: currentLang })}, '*');
+  } catch (_) {}
+}
+
+try { window.parent.postMessage({type:'request-level-state'}, '*'); } catch (_) {}
+
+// Init
+rebuildPresetSelect();
+setLang(currentLang);
+})();
+</script>
+</body>
+</html>

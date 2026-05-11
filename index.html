@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Algoritmika · Minecraft Checker Builder</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0f1420;--surface:#16213e;--surface2:#1a2744;--surface3:#233158;
+  --accent:#e94560;--accent2:#4dabf7;--text:#ecf0f1;--dim:#95a5a6;--border:rgba(255,255,255,.08);
+}
+html,body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;min-height:100vh}
+body{font-size:15px;line-height:1.6;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px}
+.wrap{max-width:760px;width:100%}
+h1{font-size:1.9rem;font-weight:700;margin-bottom:6px}
+.sub{color:var(--dim);font-size:1rem;margin-bottom:32px}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:28px}
+@media (max-width:680px){.cards{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px;display:flex;flex-direction:column;gap:10px;text-decoration:none;color:var(--text);transition:border-color .15s,transform .15s}
+.card:hover{border-color:var(--accent2);transform:translateY(-2px)}
+.card .icon{font-size:1.8rem}
+.card h2{font-size:1.1rem;font-weight:700;color:var(--accent2)}
+.card p{color:var(--dim);font-size:.9rem;line-height:1.5}
+.card .audience{margin-top:auto;color:var(--accent);font-size:.78rem;font-weight:600;letter-spacing:.5px;text-transform:uppercase}
+.notes{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 22px;font-size:.88rem;color:var(--dim)}
+.notes h3{color:var(--text);font-size:.95rem;margin-bottom:8px}
+.notes ul{padding-left:20px}
+.notes li{margin-bottom:4px}
+.notes code{background:var(--bg);padding:1px 6px;border-radius:4px;font-family:Consolas,monospace;color:var(--accent2)}
+.footer{margin-top:28px;font-size:.78rem;color:var(--dim)}
+.footer a{color:var(--accent2);text-decoration:none}
+.footer a:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🎮 Minecraft Checker Builder</h1>
+  <p class="sub">Verificadores automáticos para ejercicios de Minecraft Education · Algoritmika</p>
+
+  <div class="cards">
+    <a class="card" href="teacher-ui.html">
+      <span class="icon">🛠️</span>
+      <h2>Builder — crear un checker</h2>
+      <p>Configura las comprobaciones (mundo + código), descarga el ZIP listo para subir a la plataforma como nivel <code>frame_box</code>.</p>
+      <span class="audience">Para metodólogos</span>
+    </a>
+
+    <a class="card" href="runner.html">
+      <span class="icon">▶️</span>
+      <h2>Runner — probar un .mkcd</h2>
+      <p>Versión standalone para probar el archivo de código de un alumno contra un preset hardcoded (M2L1 barn/house, agent-fence, etc.).</p>
+      <span class="audience">Demos / pruebas</span>
+    </a>
+  </div>
+
+  <div class="notes">
+    <h3>📝 Cómo usar el Builder</h3>
+    <ul>
+      <li>Abre <code>Builder</code> arriba.</li>
+      <li>Rellena <strong>Lesson info</strong> (nombre del ejercicio, descripción).</li>
+      <li>Selecciona las comprobaciones que necesites del catálogo (mundo + código).</li>
+      <li>Ajusta los parámetros (ej. <code>fn = agent.interact</code>, <code>min = 1</code>).</li>
+      <li>Pulsa <strong>Export ZIP</strong> y guarda el archivo con el nombre del ejercicio (ej. <code>m2l4-task2-completando-primer-nivel.zip</code>).</li>
+      <li>Sube el ZIP a la carpeta Drive del urok. El equipo de ensamblaje LMS lo cargará como nivel <code>frame_box</code>.</li>
+    </ul>
+  </div>
+
+  <div class="footer">
+    <a href="https://github.com/FaintKom/mc-edu-checker-builder">Source en GitHub</a> · v1.0
+  </div>
+</div>
+</body>
+</html>
