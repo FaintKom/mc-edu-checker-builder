@@ -81,12 +81,12 @@ details.diag summary:hover{color:var(--text)}
 <body>
 <div class="header">
   <div class="lang-switch">
-    <button data-lang="es">ES</button>
-    <button data-lang="ru" class="active">RU</button>
+    <button data-lang="es" class="active">ES</button>
+    <button data-lang="ru">RU</button>
     <button data-lang="en">EN</button>
   </div>
-  <h1 id="hdrTitle">🧩 Проверка кода Minecraft</h1>
-  <p id="hdrSub">Загрузи файл проекта <code>.mkcd</code> из Code Builder, чтобы автоматически проверить решение.</p>
+  <h1 id="hdrTitle">🧩 Verificación de código Minecraft</h1>
+  <p id="hdrSub">Carga el archivo de proyecto <code>.mkcd</code> de Code Builder para verificar la solución automáticamente.</p>
 </div>
 
 <div class="container">
@@ -440,8 +440,8 @@ const UI_TEXT = {
         diagShow:'Show student code', diagHide:'Hide code' },
 };
 
-let currentLang = (new URLSearchParams(location.search).get('lang') || 'ru').toLowerCase();
-if (!UI_TEXT[currentLang]) currentLang = 'ru';
+let currentLang = (new URLSearchParams(location.search).get('lang') || 'es').toLowerCase();
+if (!UI_TEXT[currentLang]) currentLang = 'es';
 
 const $ = id => document.getElementById(id);
 const dropZone = $('dropZone'), fileInput = $('fileInput'), fileNameEl = $('fileName'),
