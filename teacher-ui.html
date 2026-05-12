@@ -632,7 +632,7 @@ async function parseMcworld(file){
   const zip=await JSZip.loadAsync(file);
   let root='';
   for(const p of Object.keys(zip.files)){const l=p.toLowerCase();if(l.endsWith('level.dat')&&!l.includes('__macosx')){root=p.substring(0,p.length-'level.dat'.length);break}}
-  const result={metadata:null,npcs:[],thumbnail:null,allEntities:[],signs:[]};
+  const result={metadata:null,npcs:[],thumbnail:null,allEntities:[],signs:[],blockNames:new Set(),blockCounts:{}};
   const ldf=zip.file(root+'level.dat');
   if(ldf){try{const d=await ldf.async('uint8array');result.metadata=window.BedrockNBT.parseLevelDat(d)}catch(e){}}
   for(const s of['world_icon.jpeg','world_icon.jpg','world_icon.png']){const f=zip.file(root+s);if(f){try{const b=await f.async('blob');result.thumbnail=URL.createObjectURL(b)}catch{}break}}
@@ -641,10 +641,38 @@ async function parseMcworld(file){
   if(Object.keys(dbf).length){
     try{
       const entries=window.LevelDBReader.readLevelDB(dbf);
+      // Pre-compiled byte pattern for "minecraft:" ASCII prefix
+      const M=[0x6D,0x69,0x6E,0x65,0x63,0x72,0x61,0x66,0x74,0x3A];
+      function isIdByte(b){return (b>=0x61&&b<=0x7A)||(b>=0x30&&b<=0x39)||b===0x5F}
       for(const en of entries){
         try{
           if(en.value.length<=2)continue;
-          const nbt=window.BedrockNBT.parseBedrockNBT(en.value);
+          const v=en.value;
+          // Scan raw bytes for "minecraft:<blockname>" patterns. Each subchunk's
+          // palette stores block names as ASCII; counting occurrences = approx
+          // number of subchunks containing the block.
+          if(v.length>=11){
+            for(let i=0;i<=v.length-11;i++){
+              if(v[i]!==0x6D)continue;
+              let match=true;
+              for(let j=1;j<10;j++){if(v[i+j]!==M[j]){match=false;break}}
+              if(!match)continue;
+              let end=i+10;
+              while(end<v.length&&isIdByte(v[end]))end++;
+              if(end>i+10){
+                let name='';
+                for(let k=i+10;k<end;k++)name+=String.fromCharCode(v[k]);
+                // Skip non-block namespaces (entity:*, item:*, etc.). Heuristic:
+                // entities/items also use "minecraft:" prefix but typically have
+                // recognizable suffixes. We keep all and let evaluator filter.
+                result.blockNames.add(name);
+                result.blockCounts[name]=(result.blockCounts[name]||0)+1;
+                i=end-1;
+              }
+            }
+          }
+          // Parse as NBT for NPCs/signs (existing logic)
+          const nbt=window.BedrockNBT.parseBedrockNBT(v);
           if(nbt&&typeof nbt.identifier==='string'){
             const e={identifier:nbt.identifier,RawtextName:nbt.RawtextName||nbt.CustomName||'',CustomName:nbt.CustomName||'',InterativeText:nbt.InterativeText||nbt.InteractiveText||'',Actions:nbt.Actions||'',Variant:nbt.Variant!=null?nbt.Variant:null,Pos:nbt.Pos||null};
             result.allEntities.push(e);
@@ -1589,6 +1617,52 @@ CHECK_REGISTRY['sign.contains_text'] = {
     en:function(p){return 'A sign must contain: '+(p.text||'')}
   },
   evaluator: function(world,p){if(!p.text)return false;var q=String(p.text).toLowerCase();return (world.signs||[]).some(function(s){return (s.text||'').toLowerCase().indexOf(q)>=0})}
+};
+
+// ---------- BLOQUES COLOCADOS / РАЗМЕЩЁННЫЕ БЛОКИ / PLACED BLOCKS ----------
+// Detección por escaneo de bytes raw: cada subchunk almacena su paleta como
+// strings ASCII "minecraft:<nombre>". Esto detecta presencia y cuenta subchunks
+// (no bloques exactos). Suficiente para «hay al menos 1 X en el mundo».
+
+CHECK_REGISTRY['world.block_present'] = {
+  category: 'world',
+  label: {es:'Bloque presente en el mundo', ru:'Блок присутствует в мире', en:'Block present in world'},
+  description: {es:'El mundo contiene al menos 1 bloque del tipo X (ej. iron_door, lever, redstone_wire). Detecta presencia escaneando la paleta de bloques de los subchunks.', ru:'В мире есть как минимум 1 блок типа X (например, iron_door, lever, redstone_wire). Определяется сканированием палитры блоков subchunk-ов.', en:'World contains at least 1 block of type X (e.g. iron_door, lever, redstone_wire). Detected by scanning subchunk block palettes.'},
+  params: [
+    {key:'block',type:'text',label:{es:'Nombre del bloque',ru:'Имя блока',en:'Block name'},default:'iron_door',placeholder:'iron_door  o  minecraft:lever'}
+  ],
+  defaultLabel: {
+    es:function(p){return 'Hay un bloque '+(p.block||'?')+' en el mundo'},
+    ru:function(p){return 'В мире есть блок '+(p.block||'?')},
+    en:function(p){return 'There is a '+(p.block||'?')+' block in the world'}
+  },
+  defaultHint: {
+    es:function(p){return 'Coloca al menos 1 bloque de tipo '+(p.block||'')+' en el mundo.'},
+    ru:function(p){return 'Размести хотя бы 1 блок типа '+(p.block||'')+' в мире.'},
+    en:function(p){return 'Place at least 1 '+(p.block||'')+' block in the world.'}
+  },
+  evaluator: function(world,p){var b=String(p.block||'').replace(/^minecraft:/,'').trim().toLowerCase();if(!b)return false;return world.blockNames&&world.blockNames.has(b)}
+};
+
+CHECK_REGISTRY['world.block_subchunk_count_min'] = {
+  category: 'world',
+  label: {es:'Bloque en ≥ N subchunks', ru:'Блок встречается в ≥ N subchunk-ах', en:'Block in ≥ N subchunks'},
+  description: {es:'El bloque X aparece en al menos N subchunks (≈ proporcional al número de bloques colocados, pero no exacto). Útil para «muchos bloques de X».', ru:'Блок X встречается минимум в N subchunk-ах (≈ примерное число размещённых блоков, но не точное). Полезно для «много блоков X».', en:'Block X appears in at least N subchunks (≈ rough proxy for placed block count, not exact). Useful for «many X blocks».'},
+  params: [
+    {key:'block',type:'text',label:{es:'Nombre del bloque',ru:'Имя блока',en:'Block name'},default:'redstone_wire',placeholder:'redstone_wire'},
+    {key:'min',type:'number',label:{es:'Mínimo subchunks',ru:'Минимум subchunk-ов',en:'Minimum subchunks'},default:1,min:1,max:1000}
+  ],
+  defaultLabel: {
+    es:function(p){return (p.block||'?')+' en al menos '+p.min+' áreas'},
+    ru:function(p){return (p.block||'?')+' минимум в '+p.min+' областях'},
+    en:function(p){return (p.block||'?')+' in at least '+p.min+' regions'}
+  },
+  defaultHint: {
+    es:function(p){return 'Usa el bloque '+(p.block||'')+' en varias zonas del mundo.'},
+    ru:function(p){return 'Используй блок '+(p.block||'')+' в нескольких местах мира.'},
+    en:function(p){return 'Use the '+(p.block||'')+' block in several areas of the world.'}
+  },
+  evaluator: function(world,p){var b=String(p.block||'').replace(/^minecraft:/,'').trim().toLowerCase();if(!b)return false;var c=(world.blockCounts&&world.blockCounts[b])||0;return c>=Number(p.min||1)}
 };
 
 // ---------- CÓDIGO / КОД / CODE (.mkcd) ----------

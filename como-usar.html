@@ -157,8 +157,10 @@ details.faq p{margin-top:12px;margin-bottom:0;color:var(--dim);font-size:.92rem;
             <li data-i18n="checks.world.i5"><code>npc.all_have_dialogue</code> — todos los NPCs tienen diálogo</li>
             <li data-i18n="checks.world.i6"><code>entity.min_count_of</code> — al menos N entidades de tipo X</li>
             <li data-i18n="checks.world.i7"><code>sign.contains_text</code> — algún letrero contiene texto X</li>
+            <li data-i18n="checks.world.i8"><code>world.block_present</code> — el mundo contiene un bloque X (ej. <code>iron_door</code>, <code>lever</code>)</li>
+            <li data-i18n="checks.world.i9"><code>world.block_subchunk_count_min</code> — el bloque X aparece en al menos N áreas del mundo</li>
           </ul>
-          <div class="note" data-i18n="checks.world.note">+ otras 15 comprobaciones de mundo</div>
+          <div class="note" data-i18n="checks.world.note">+ otras 13 comprobaciones de mundo</div>
         </div>
 
         <div class="cat-card">
@@ -193,6 +195,19 @@ details.faq p{margin-top:12px;margin-bottom:0;color:var(--dim);font-size:.92rem;
       </div>
 
       <p data-i18n="ex.outro">Cuando el alumno suba su <code>.mkcd</code>, el checker analizará el código y mostrará verde si llama <code>agent.interact</code> al menos una vez, rojo si no.</p>
+
+      <h3 data-i18n="ex2.heading">Double-checker — verificar también el mundo</h3>
+      <p data-i18n="ex2.intro">Si el ejercicio también requiere comprobar que el alumno colocó ciertos bloques en el mundo (puerta de hierro + palanca para el sistema de redstone, por ejemplo), añade dos comprobaciones más sobre el archivo <code>.mcworld</code>:</p>
+
+      <div class="example-box">
+        <div class="ex-title" data-i18n="ex2.title">Configuración complementaria (mundo .mcworld)</div>
+        <ul>
+          <li data-i18n="ex2.c1">Añade <code>world.block_present</code> con <code>block = iron_door</code></li>
+          <li data-i18n="ex2.c2">Añade <code>world.block_present</code> con <code>block = lever</code></li>
+        </ul>
+      </div>
+
+      <p data-i18n="ex2.outro">Ahora el alumno debe entregar dos archivos: el código (<code>.mkcd</code>) Y el mundo (<code>.mcworld</code>). Los 3 checks pasan en verde solo si el código llama <code>agent.interact</code> Y el mundo tiene tanto una puerta de hierro como una palanca.</p>
     </section>
 
     <section id="faq">
@@ -278,7 +293,9 @@ const I18N = {
     'checks.world.i5': '<code>npc.all_have_dialogue</code> — todos los NPCs tienen diálogo',
     'checks.world.i6': '<code>entity.min_count_of</code> — al menos N entidades de tipo X',
     'checks.world.i7': '<code>sign.contains_text</code> — algún letrero contiene texto X',
-    'checks.world.note': '+ otras 15 comprobaciones de mundo',
+    'checks.world.i8': '<code>world.block_present</code> — el mundo contiene un bloque X (ej. <code>iron_door</code>, <code>lever</code>)',
+    'checks.world.i9': '<code>world.block_subchunk_count_min</code> — el bloque X aparece en al menos N áreas del mundo',
+    'checks.world.note': '+ otras 13 comprobaciones de mundo',
     'checks.code.title': '💻 Código (.mkcd)',
     'checks.code.i1': '<code>code.valid</code> — el código compila',
     'checks.code.i2': '<code>code.chat_command</code> — comando de chat X existe',
@@ -297,6 +314,12 @@ const I18N = {
     'ex.c2': 'Parámetro <code>fn</code>: <code>agent.interact</code>',
     'ex.c3': 'Parámetro <code>min</code>: <code>1</code>',
     'ex.outro': 'Cuando el alumno suba su <code>.mkcd</code>, el checker analizará el código y mostrará verde si llama <code>agent.interact</code> al menos una vez, rojo si no.',
+    'ex2.heading': 'Double-checker — verificar también el mundo',
+    'ex2.intro': 'Si el ejercicio también requiere comprobar que el alumno colocó ciertos bloques en el mundo (puerta de hierro + palanca para el sistema de redstone, por ejemplo), añade dos comprobaciones más sobre el archivo <code>.mcworld</code>:',
+    'ex2.title': 'Configuración complementaria (mundo .mcworld)',
+    'ex2.c1': 'Añade <code>world.block_present</code> con <code>block = iron_door</code>',
+    'ex2.c2': 'Añade <code>world.block_present</code> con <code>block = lever</code>',
+    'ex2.outro': 'Ahora el alumno debe entregar dos archivos: el código (<code>.mkcd</code>) Y el mundo (<code>.mcworld</code>). Los 3 checks pasan en verde solo si el código llama <code>agent.interact</code> Y el mundo tiene tanto una puerta de hierro como una palanca.',
     'faq.heading': '❓ Preguntas frecuentes',
     'faq.q1': '¿Tengo que probar el checker antes de entregarlo?',
     'faq.a1': 'Sí, recomendado. El Builder tiene una zona de pruebas integrada — arrastra un <code>.mcworld</code> o <code>.mkcd</code> de ejemplo y verifica que tus criterios funcionan como esperas.',
@@ -350,7 +373,9 @@ const I18N = {
     'checks.world.i5': '<code>npc.all_have_dialogue</code> — у всех NPC есть диалог',
     'checks.world.i6': '<code>entity.min_count_of</code> — минимум N сущностей типа X',
     'checks.world.i7': '<code>sign.contains_text</code> — какая-то табличка содержит текст X',
-    'checks.world.note': '+ ещё 15 проверок мира',
+    'checks.world.i8': '<code>world.block_present</code> — в мире есть блок X (напр. <code>iron_door</code>, <code>lever</code>)',
+    'checks.world.i9': '<code>world.block_subchunk_count_min</code> — блок X встречается минимум в N зонах мира',
+    'checks.world.note': '+ ещё 13 проверок мира',
     'checks.code.title': '💻 Код (.mkcd)',
     'checks.code.i1': '<code>code.valid</code> — код компилируется',
     'checks.code.i2': '<code>code.chat_command</code> — команда чата X существует',
@@ -369,6 +394,12 @@ const I18N = {
     'ex.c2': 'Параметр <code>fn</code>: <code>agent.interact</code>',
     'ex.c3': 'Параметр <code>min</code>: <code>1</code>',
     'ex.outro': 'Когда ученик загрузит свой <code>.mkcd</code>, чекер проанализирует код и покажет зелёный, если <code>agent.interact</code> вызывается хотя бы раз, красный — если нет.',
+    'ex2.heading': 'Double-checker — проверка ещё и мира',
+    'ex2.intro': 'Если задание требует проверить, что ученик разместил определённые блоки в мире (железная дверь + рычаг для redstone-системы, например), добавь две дополнительные проверки на файл <code>.mcworld</code>:',
+    'ex2.title': 'Дополнительная настройка (мир .mcworld)',
+    'ex2.c1': 'Добавь <code>world.block_present</code> с <code>block = iron_door</code>',
+    'ex2.c2': 'Добавь <code>world.block_present</code> с <code>block = lever</code>',
+    'ex2.outro': 'Теперь ученик должен сдать два файла: код (<code>.mkcd</code>) И мир (<code>.mcworld</code>). Все 3 проверки пройдут зелёным, только если код вызывает <code>agent.interact</code> И в мире есть и железная дверь, и рычаг.',
     'faq.heading': '❓ Частые вопросы',
     'faq.q1': 'Нужно ли тестировать чекер перед сдачей?',
     'faq.a1': 'Да, рекомендуется. В Builder встроена тестовая зона — перетащи пример <code>.mcworld</code> или <code>.mkcd</code> и убедись, что критерии работают как ожидалось.',
@@ -422,7 +453,9 @@ const I18N = {
     'checks.world.i5': '<code>npc.all_have_dialogue</code> — all NPCs have dialogue',
     'checks.world.i6': '<code>entity.min_count_of</code> — at least N entities of type X',
     'checks.world.i7': '<code>sign.contains_text</code> — some sign contains text X',
-    'checks.world.note': '+ 15 more world checks',
+    'checks.world.i8': '<code>world.block_present</code> — world contains a block of type X (e.g. <code>iron_door</code>, <code>lever</code>)',
+    'checks.world.i9': '<code>world.block_subchunk_count_min</code> — block X appears in at least N regions of the world',
+    'checks.world.note': '+ 13 more world checks',
     'checks.code.title': '💻 Code (.mkcd)',
     'checks.code.i1': '<code>code.valid</code> — code compiles',
     'checks.code.i2': '<code>code.chat_command</code> — chat command X exists',
@@ -441,6 +474,12 @@ const I18N = {
     'ex.c2': 'Parameter <code>fn</code>: <code>agent.interact</code>',
     'ex.c3': 'Parameter <code>min</code>: <code>1</code>',
     'ex.outro': 'When the student uploads their <code>.mkcd</code>, the checker analyzes the code and shows green if <code>agent.interact</code> is called at least once, red otherwise.',
+    'ex2.heading': 'Double-checker — also verify the world',
+    'ex2.intro': 'If the exercise also requires checking that the student placed specific blocks in the world (iron door + lever for the redstone system, for example), add two more checks on the <code>.mcworld</code> file:',
+    'ex2.title': 'Additional configuration (world .mcworld)',
+    'ex2.c1': 'Add <code>world.block_present</code> with <code>block = iron_door</code>',
+    'ex2.c2': 'Add <code>world.block_present</code> with <code>block = lever</code>',
+    'ex2.outro': 'Now the student must submit two files: the code (<code>.mkcd</code>) AND the world (<code>.mcworld</code>). All 3 checks pass green only if the code calls <code>agent.interact</code> AND the world contains both an iron door and a lever.',
     'faq.heading': '❓ Frequently asked questions',
     'faq.q1': 'Do I need to test the checker before handing it off?',
     'faq.a1': 'Yes, recommended. The Builder has a built-in test area — drag a sample <code>.mcworld</code> or <code>.mkcd</code> and verify your criteria work as expected.',
