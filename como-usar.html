@@ -24,6 +24,10 @@ strong{color:#fff}
 .topbar a.home:hover{color:var(--text);text-decoration:none}
 .topbar h1{font-size:1rem;font-weight:700;letter-spacing:.3px}
 .topbar .spacer{flex:1}
+.lang-switch{display:inline-flex;background:var(--bg);border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.lang-switch button{background:transparent;border:none;color:var(--dim);padding:6px 11px;font-size:.78rem;font-weight:600;cursor:pointer;letter-spacing:.5px;font-family:inherit}
+.lang-switch button.active{background:var(--accent2);color:#fff}
+.lang-switch button:not(.active):hover{background:var(--surface2);color:var(--text)}
 .topbar .builder-link{background:var(--accent);color:#fff;padding:8px 16px;border-radius:6px;font-size:.85rem;font-weight:600}
 .topbar .builder-link:hover{filter:brightness(1.15);text-decoration:none}
 
@@ -86,151 +90,403 @@ details.faq p{margin-top:12px;margin-bottom:0;color:var(--dim);font-size:.92rem;
 <body>
 
 <div class="topbar">
-  <a class="home" href="index.html">← Inicio</a>
-  <h1>Cómo usar el Builder</h1>
+  <a class="home" href="index.html" data-i18n="topbar.home">← Inicio</a>
+  <h1 data-i18n="topbar.title">Cómo usar el Builder</h1>
   <div class="spacer"></div>
-  <a class="builder-link" href="teacher-ui.html">Abrir Builder →</a>
+  <div class="lang-switch" id="langSwitch">
+    <button data-lang="es">ES</button>
+    <button data-lang="ru">RU</button>
+    <button data-lang="en">EN</button>
+  </div>
+  <a class="builder-link" href="teacher-ui.html" data-i18n="topbar.openBuilder">Abrir Builder →</a>
 </div>
 
 <div class="layout">
 
   <aside class="toc">
-    <h3>En esta página</h3>
+    <h3 data-i18n="toc.heading">En esta página</h3>
     <ul>
-      <li><a href="#pasos">📝 Cómo usar el Builder</a></li>
-      <li><a href="#checks">🧰 Comprobaciones</a></li>
-      <li><a href="#ejemplo">💡 Ejemplo común</a></li>
-      <li><a href="#faq">❓ Preguntas frecuentes</a></li>
-      <li><a href="#soporte">🛠️ Soporte</a></li>
+      <li><a href="#pasos" data-i18n="toc.steps">📝 Cómo usar el Builder</a></li>
+      <li><a href="#checks" data-i18n="toc.checks">🧰 Comprobaciones</a></li>
+      <li><a href="#ejemplo" data-i18n="toc.example">💡 Ejemplo común</a></li>
+      <li><a href="#faq" data-i18n="toc.faq">❓ Preguntas frecuentes</a></li>
+      <li><a href="#soporte" data-i18n="toc.support">🛠️ Soporte</a></li>
     </ul>
   </aside>
 
   <main>
-    <h1 class="page-title">Cómo crear un checker para ejercicios de Minecraft</h1>
-    <p class="intro">Builder web público para construir verificadores automáticos de ejercicios. Curso Algoritmika · Minecraft Global ESP / ENG.</p>
+    <h1 class="page-title" data-i18n="page.title">Cómo crear un checker para ejercicios de Minecraft</h1>
+    <p class="intro" data-i18n="page.intro">Builder web público para construir verificadores automáticos de ejercicios. Curso Algoritmika · Minecraft Global ESP / ENG.</p>
 
     <div class="intro-links">
-      <div>🔗 <strong>Builder:</strong> <a href="teacher-ui.html">teacher-ui.html</a></div>
-      <div>🛠️ <strong>Código fuente:</strong> <a href="https://github.com/FaintKom/mc-edu-checker-builder">github.com/FaintKom/mc-edu-checker-builder</a></div>
+      <div>🔗 <strong data-i18n="intro.builderLabel">Builder:</strong> <a href="teacher-ui.html">teacher-ui.html</a></div>
+      <div>🛠️ <strong data-i18n="intro.sourceLabel">Código fuente:</strong> <a href="https://github.com/FaintKom/mc-edu-checker-builder">github.com/FaintKom/mc-edu-checker-builder</a></div>
     </div>
 
     <section id="pasos">
-      <h2>📝 Cómo usar el Builder</h2>
+      <h2 data-i18n="steps.heading">📝 Cómo usar el Builder</h2>
       <ol>
-        <li>Abre el <a href="teacher-ui.html"><strong>Builder</strong></a> en el navegador.</li>
-        <li>Rellena <strong>Lesson info</strong> (título y descripción del ejercicio).</li>
-        <li>Selecciona las comprobaciones que necesitas del catálogo (Mundo + Código).</li>
-        <li>Ajusta los parámetros — por ejemplo: <code>fn = agent.interact</code>, <code>min = 1</code>.</li>
-        <li>Pulsa <strong>Exportar</strong> y descarga el archivo ZIP.</li>
-        <li>Guarda el ZIP con el nombre del ejercicio. Ejemplo: <code>m2l4-task2-completando-primer-nivel.zip</code></li>
-        <li>Sube el ZIP a la carpeta Drive del urok.</li>
-        <li>Avisa al equipo de ensamblaje LMS que el checker está listo.</li>
+        <li data-i18n="steps.s1">Abre el <a href="teacher-ui.html"><strong>Builder</strong></a> en el navegador.</li>
+        <li data-i18n="steps.s2">Rellena <strong>Lesson info</strong> (título y descripción del ejercicio).</li>
+        <li data-i18n="steps.s3">Selecciona las comprobaciones que necesitas del catálogo (Mundo + Código).</li>
+        <li data-i18n="steps.s4">Ajusta los parámetros — por ejemplo: <code>fn = agent.interact</code>, <code>min = 1</code>.</li>
+        <li data-i18n="steps.s5">Pulsa <strong>Exportar</strong> y descarga el archivo ZIP.</li>
+        <li data-i18n="steps.s6">Guarda el ZIP con el nombre del ejercicio. Ejemplo: <code>m2l4-task2-completando-primer-nivel.zip</code></li>
+        <li data-i18n="steps.s7">Sube el ZIP a la carpeta Drive del urok.</li>
+        <li data-i18n="steps.s8">Avisa al equipo de ensamblaje LMS que el checker está listo.</li>
       </ol>
 
-      <div class="callout">
+      <div class="callout" data-i18n="steps.callout">
         <strong>Convención de nombre:</strong> <code>&lt;módulo&gt;-&lt;lección&gt;-task&lt;N&gt;-&lt;descripción-corta&gt;.zip</code><br>
         Ejemplos: <code>m1l3-task1-laberinto-agente.zip</code> · <code>m2l1-task3-construir-granja.zip</code>
       </div>
     </section>
 
     <section id="checks">
-      <h2>🧰 Comprobaciones disponibles</h2>
-      <p>El Builder ofrece más de 30 tipos de comprobaciones, divididas en dos categorías. Estas son las más usadas — el catálogo completo está dentro del Builder.</p>
+      <h2 data-i18n="checks.heading">🧰 Comprobaciones disponibles</h2>
+      <p data-i18n="checks.intro">El Builder ofrece más de 30 tipos de comprobaciones, divididas en dos categorías. Estas son las más usadas — el catálogo completo está dentro del Builder.</p>
 
       <div class="cards">
         <div class="cat-card">
-          <h3>🌍 Mundo (.mcworld)</h3>
+          <h3 data-i18n="checks.world.title">🌍 Mundo (.mcworld)</h3>
           <ul>
-            <li><code>world.valid</code> — el archivo es un mundo válido</li>
-            <li><code>world.name_contains</code> — el nombre contiene texto X</li>
-            <li><code>world.gamemode_is</code> — modo (creative / survival / adventure)</li>
-            <li><code>npc.min_count</code> — al menos N NPCs</li>
-            <li><code>npc.all_have_dialogue</code> — todos los NPCs tienen diálogo</li>
-            <li><code>entity.min_count_of</code> — al menos N entidades de tipo X</li>
-            <li><code>sign.contains_text</code> — algún letrero contiene texto X</li>
+            <li data-i18n="checks.world.i1"><code>world.valid</code> — el archivo es un mundo válido</li>
+            <li data-i18n="checks.world.i2"><code>world.name_contains</code> — el nombre del mundo contiene texto X</li>
+            <li data-i18n="checks.world.i3"><code>world.gamemode_is</code> — modo de juego: creative / survival / adventure</li>
+            <li data-i18n="checks.world.i4"><code>npc.min_count</code> — al menos N NPCs</li>
+            <li data-i18n="checks.world.i5"><code>npc.all_have_dialogue</code> — todos los NPCs tienen diálogo</li>
+            <li data-i18n="checks.world.i6"><code>entity.min_count_of</code> — al menos N entidades de tipo X</li>
+            <li data-i18n="checks.world.i7"><code>sign.contains_text</code> — algún letrero contiene texto X</li>
           </ul>
-          <div class="note">+ otras 15 comprobaciones de mundo</div>
+          <div class="note" data-i18n="checks.world.note">+ otras 15 comprobaciones de mundo</div>
         </div>
 
         <div class="cat-card">
-          <h3>💻 Código (.mkcd)</h3>
+          <h3 data-i18n="checks.code.title">💻 Código (.mkcd)</h3>
           <ul>
-            <li><code>code.valid</code> — el código compila</li>
-            <li><code>code.chat_command</code> — comando de chat X existe</li>
-            <li><code>code.api_call_min</code> — función X llamada ≥ N veces</li>
-            <li><code>code.has_loop</code> — usa al menos un bucle</li>
-            <li><code>code.nested_loops</code> — bucles anidados (profundidad ≥ N)</li>
-            <li><code>code.uses_block</code> — <code>agent.setItem</code> con bloque específico</li>
-            <li><code>code.has_if</code> — código contiene <code>if</code> / <code>else</code></li>
-            <li><code>code.uses_identifier</code> — usa identificador X</li>
+            <li data-i18n="checks.code.i1"><code>code.valid</code> — el código compila</li>
+            <li data-i18n="checks.code.i2"><code>code.chat_command</code> — comando de chat X existe</li>
+            <li data-i18n="checks.code.i3"><code>code.api_call_min</code> — función X llamada ≥ N veces</li>
+            <li data-i18n="checks.code.i4"><code>code.has_loop</code> — usa al menos un bucle</li>
+            <li data-i18n="checks.code.i5"><code>code.nested_loops</code> — bucles anidados (profundidad ≥ N)</li>
+            <li data-i18n="checks.code.i6"><code>code.uses_block</code> — <code>agent.setItem</code> con bloque específico</li>
+            <li data-i18n="checks.code.i7"><code>code.has_if</code> — código contiene <code>if</code> / <code>else</code></li>
+            <li data-i18n="checks.code.i8"><code>code.uses_identifier</code> — usa identificador X</li>
           </ul>
-          <div class="note">+ otras 5 comprobaciones de código</div>
+          <div class="note" data-i18n="checks.code.note">+ otras 5 comprobaciones de código</div>
         </div>
       </div>
     </section>
 
     <section id="ejemplo">
-      <h2>💡 Ejemplo común — validar <code>agent.interact</code></h2>
+      <h2 data-i18n="ex.heading">💡 Ejemplo común — validar <code>agent.interact</code></h2>
 
       <div class="example-box">
-        <div class="ex-title">Caso típico (ej. M2L4 Task 2)</div>
-        <div class="ex-q">«El ejercicio pide que el alumno use al menos una vez el bloque <code>agent.interact</code> en su código.»</div>
-        <strong>Configuración en el Builder:</strong>
+        <div class="ex-title" data-i18n="ex.title">Caso típico (ej. M2L4 Task 2)</div>
+        <div class="ex-q" data-i18n="ex.q">«El ejercicio pide que el alumno use al menos una vez el bloque <code>agent.interact</code> en su código.»</div>
+        <strong data-i18n="ex.configHeading">Configuración en el Builder:</strong>
         <ul>
-          <li>Añade la comprobación: <code>code.api_call_min</code></li>
-          <li>Parámetro <code>fn</code>: <code>agent.interact</code></li>
-          <li>Parámetro <code>min</code>: <code>1</code></li>
+          <li data-i18n="ex.c1">Añade la comprobación: <code>code.api_call_min</code></li>
+          <li data-i18n="ex.c2">Parámetro <code>fn</code>: <code>agent.interact</code></li>
+          <li data-i18n="ex.c3">Parámetro <code>min</code>: <code>1</code></li>
         </ul>
       </div>
 
-      <p>Cuando el alumno suba su <code>.mkcd</code>, el checker analizará el código y mostrará verde si llama <code>agent.interact</code> al menos una vez, rojo si no.</p>
+      <p data-i18n="ex.outro">Cuando el alumno suba su <code>.mkcd</code>, el checker analizará el código y mostrará verde si llama <code>agent.interact</code> al menos una vez, rojo si no.</p>
     </section>
 
     <section id="faq">
-      <h2>❓ Preguntas frecuentes</h2>
+      <h2 data-i18n="faq.heading">❓ Preguntas frecuentes</h2>
 
       <details class="faq">
-        <summary>¿Tengo que probar el checker antes de entregarlo?</summary>
-        <p>Sí, recomendado. El Builder tiene una zona de pruebas integrada — arrastra un <code>.mcworld</code> o <code>.mkcd</code> de ejemplo y verifica que tus criterios funcionan como esperas.</p>
+        <summary data-i18n="faq.q1">¿Tengo que probar el checker antes de entregarlo?</summary>
+        <p data-i18n="faq.a1">Sí, recomendado. El Builder tiene una zona de pruebas integrada — arrastra un <code>.mcworld</code> o <code>.mkcd</code> de ejemplo y verifica que tus criterios funcionan como esperas.</p>
       </details>
 
       <details class="faq">
-        <summary>¿Qué pasa si necesito un check que no está en el catálogo?</summary>
-        <p>Avisa a <strong>@FaintKom</strong> (Mario). Los checks nuevos se añaden al código del Builder y quedan disponibles para todos en pocos minutos (GitHub Pages reconstruye automáticamente).</p>
+        <summary data-i18n="faq.q2">¿Qué pasa si necesito un check que no está en el catálogo?</summary>
+        <p data-i18n="faq.a2">Avisa a <strong>@FaintKom</strong> (Mario). Los checks nuevos se añaden al código del Builder y quedan disponibles para todos en pocos minutos (GitHub Pages reconstruye automáticamente).</p>
       </details>
 
       <details class="faq">
-        <summary>¿Funciona en cualquier navegador?</summary>
-        <p>Chrome, Edge, Firefox y Safari modernos (últimos 2 años). <strong>No</strong> funciona en Internet Explorer.</p>
+        <summary data-i18n="faq.q3">¿Funciona en cualquier navegador?</summary>
+        <p data-i18n="faq.a3">Chrome, Edge, Firefox y Safari modernos (últimos 2 años). <strong>No</strong> funciona en Internet Explorer.</p>
       </details>
 
       <details class="faq">
-        <summary>¿Puedo guardar y reeditar un checker después de exportarlo?</summary>
-        <p>Sí. Antes de exportar, copia el JSON de configuración del ejercicio (botón en el Builder). Lo puedes pegar después para seguir editando.</p>
+        <summary data-i18n="faq.q4">¿Puedo guardar y reeditar un checker después de exportarlo?</summary>
+        <p data-i18n="faq.a4">Sí. Antes de exportar, copia el JSON de configuración del ejercicio (botón en el Builder). Lo puedes pegar después para seguir editando.</p>
       </details>
 
       <details class="faq">
-        <summary>¿Funciona offline?</summary>
-        <p>El Builder es estático pero carga librerías de CDN. Si necesitas usarlo offline, pide a Mario una copia descargable del HTML.</p>
+        <summary data-i18n="faq.q5">¿Funciona offline?</summary>
+        <p data-i18n="faq.a5">El Builder es estático pero carga librerías de CDN. Si necesitas usarlo offline, pide a Mario una copia descargable del HTML.</p>
       </details>
     </section>
 
     <section id="soporte">
-      <h2>🛠️ Soporte</h2>
+      <h2 data-i18n="support.heading">🛠️ Soporte</h2>
       <ul>
-        <li>Bugs y sugerencias: <strong>@FaintKom</strong> (Mario Becerra)</li>
-        <li>Repositorio del código: <a href="https://github.com/FaintKom/mc-edu-checker-builder">github.com/FaintKom/mc-edu-checker-builder</a></li>
-        <li>Reportar un issue: <a href="https://github.com/FaintKom/mc-edu-checker-builder/issues/new">crear issue en GitHub</a></li>
+        <li data-i18n="support.i1">Bugs y sugerencias: <strong>@FaintKom</strong> (Mario Becerra)</li>
+        <li data-i18n="support.i2">Repositorio del código: <a href="https://github.com/FaintKom/mc-edu-checker-builder">github.com/FaintKom/mc-edu-checker-builder</a></li>
+        <li data-i18n="support.i3">Reportar un issue: <a href="https://github.com/FaintKom/mc-edu-checker-builder/issues/new">crear issue en GitHub</a></li>
       </ul>
     </section>
 
     <div class="footer">
-      <span>Última actualización: 2026-05-11</span>
-      <span><a href="index.html">← Volver al inicio</a></span>
+      <span data-i18n="footer.updated">Última actualización: 2026-05-11</span>
+      <span><a href="index.html" data-i18n="footer.back">← Volver al inicio</a></span>
     </div>
   </main>
 
 </div>
+
+<script>
+const I18N = {
+  es: {
+    _title: 'Cómo usar el Builder · Minecraft Checker Builder',
+    'topbar.home': '← Inicio',
+    'topbar.title': 'Cómo usar el Builder',
+    'topbar.openBuilder': 'Abrir Builder →',
+    'toc.heading': 'En esta página',
+    'toc.steps': '📝 Cómo usar el Builder',
+    'toc.checks': '🧰 Comprobaciones',
+    'toc.example': '💡 Ejemplo común',
+    'toc.faq': '❓ Preguntas frecuentes',
+    'toc.support': '🛠️ Soporte',
+    'page.title': 'Cómo crear un checker para ejercicios de Minecraft',
+    'page.intro': 'Builder web público para construir verificadores automáticos de ejercicios. Curso Algoritmika · Minecraft Global ESP / ENG.',
+    'intro.builderLabel': 'Builder:',
+    'intro.sourceLabel': 'Código fuente:',
+    'steps.heading': '📝 Cómo usar el Builder',
+    'steps.s1': 'Abre el <a href="teacher-ui.html"><strong>Builder</strong></a> en el navegador.',
+    'steps.s2': 'Rellena <strong>Lesson info</strong> (título y descripción del ejercicio).',
+    'steps.s3': 'Selecciona las comprobaciones que necesitas del catálogo (Mundo + Código).',
+    'steps.s4': 'Ajusta los parámetros — por ejemplo: <code>fn = agent.interact</code>, <code>min = 1</code>.',
+    'steps.s5': 'Pulsa <strong>Exportar</strong> y descarga el archivo ZIP.',
+    'steps.s6': 'Guarda el ZIP con el nombre del ejercicio. Ejemplo: <code>m2l4-task2-completando-primer-nivel.zip</code>',
+    'steps.s7': 'Sube el ZIP a la carpeta Drive del urok.',
+    'steps.s8': 'Avisa al equipo de ensamblaje LMS que el checker está listo.',
+    'steps.callout': '<strong>Convención de nombre:</strong> <code>&lt;módulo&gt;-&lt;lección&gt;-task&lt;N&gt;-&lt;descripción-corta&gt;.zip</code><br>Ejemplos: <code>m1l3-task1-laberinto-agente.zip</code> · <code>m2l1-task3-construir-granja.zip</code>',
+    'checks.heading': '🧰 Comprobaciones disponibles',
+    'checks.intro': 'El Builder ofrece más de 30 tipos de comprobaciones, divididas en dos categorías. Estas son las más usadas — el catálogo completo está dentro del Builder.',
+    'checks.world.title': '🌍 Mundo (.mcworld)',
+    'checks.world.i1': '<code>world.valid</code> — el archivo es un mundo válido',
+    'checks.world.i2': '<code>world.name_contains</code> — el nombre del mundo contiene texto X',
+    'checks.world.i3': '<code>world.gamemode_is</code> — modo de juego: creative / survival / adventure',
+    'checks.world.i4': '<code>npc.min_count</code> — al menos N NPCs',
+    'checks.world.i5': '<code>npc.all_have_dialogue</code> — todos los NPCs tienen diálogo',
+    'checks.world.i6': '<code>entity.min_count_of</code> — al menos N entidades de tipo X',
+    'checks.world.i7': '<code>sign.contains_text</code> — algún letrero contiene texto X',
+    'checks.world.note': '+ otras 15 comprobaciones de mundo',
+    'checks.code.title': '💻 Código (.mkcd)',
+    'checks.code.i1': '<code>code.valid</code> — el código compila',
+    'checks.code.i2': '<code>code.chat_command</code> — comando de chat X existe',
+    'checks.code.i3': '<code>code.api_call_min</code> — función X llamada ≥ N veces',
+    'checks.code.i4': '<code>code.has_loop</code> — usa al menos un bucle',
+    'checks.code.i5': '<code>code.nested_loops</code> — bucles anidados (profundidad ≥ N)',
+    'checks.code.i6': '<code>code.uses_block</code> — <code>agent.setItem</code> con bloque específico',
+    'checks.code.i7': '<code>code.has_if</code> — código contiene <code>if</code> / <code>else</code>',
+    'checks.code.i8': '<code>code.uses_identifier</code> — usa identificador X',
+    'checks.code.note': '+ otras 5 comprobaciones de código',
+    'ex.heading': '💡 Ejemplo común — validar <code>agent.interact</code>',
+    'ex.title': 'Caso típico (ej. M2L4 Task 2)',
+    'ex.q': '«El ejercicio pide que el alumno use al menos una vez el bloque <code>agent.interact</code> en su código.»',
+    'ex.configHeading': 'Configuración en el Builder:',
+    'ex.c1': 'Añade la comprobación: <code>code.api_call_min</code>',
+    'ex.c2': 'Parámetro <code>fn</code>: <code>agent.interact</code>',
+    'ex.c3': 'Parámetro <code>min</code>: <code>1</code>',
+    'ex.outro': 'Cuando el alumno suba su <code>.mkcd</code>, el checker analizará el código y mostrará verde si llama <code>agent.interact</code> al menos una vez, rojo si no.',
+    'faq.heading': '❓ Preguntas frecuentes',
+    'faq.q1': '¿Tengo que probar el checker antes de entregarlo?',
+    'faq.a1': 'Sí, recomendado. El Builder tiene una zona de pruebas integrada — arrastra un <code>.mcworld</code> o <code>.mkcd</code> de ejemplo y verifica que tus criterios funcionan como esperas.',
+    'faq.q2': '¿Qué pasa si necesito un check que no está en el catálogo?',
+    'faq.a2': 'Avisa a <strong>@FaintKom</strong> (Mario). Los checks nuevos se añaden al código del Builder y quedan disponibles para todos en pocos minutos (GitHub Pages reconstruye automáticamente).',
+    'faq.q3': '¿Funciona en cualquier navegador?',
+    'faq.a3': 'Chrome, Edge, Firefox y Safari modernos (últimos 2 años). <strong>No</strong> funciona en Internet Explorer.',
+    'faq.q4': '¿Puedo guardar y reeditar un checker después de exportarlo?',
+    'faq.a4': 'Sí. Antes de exportar, copia el JSON de configuración del ejercicio (botón en el Builder). Lo puedes pegar después para seguir editando.',
+    'faq.q5': '¿Funciona offline?',
+    'faq.a5': 'El Builder es estático pero carga librerías de CDN. Si necesitas usarlo offline, pide a Mario una copia descargable del HTML.',
+    'support.heading': '🛠️ Soporte',
+    'support.i1': 'Bugs y sugerencias: <strong>@FaintKom</strong> (Mario Becerra)',
+    'support.i2': 'Repositorio del código: <a href="https://github.com/FaintKom/mc-edu-checker-builder">github.com/FaintKom/mc-edu-checker-builder</a>',
+    'support.i3': 'Reportar un issue: <a href="https://github.com/FaintKom/mc-edu-checker-builder/issues/new">crear issue en GitHub</a>',
+    'footer.updated': 'Última actualización: 2026-05-11',
+    'footer.back': '← Volver al inicio',
+  },
+  ru: {
+    _title: 'Как пользоваться Builder · Minecraft Checker Builder',
+    'topbar.home': '← На главную',
+    'topbar.title': 'Как пользоваться Builder',
+    'topbar.openBuilder': 'Открыть Builder →',
+    'toc.heading': 'На этой странице',
+    'toc.steps': '📝 Как пользоваться',
+    'toc.checks': '🧰 Проверки',
+    'toc.example': '💡 Типовой пример',
+    'toc.faq': '❓ Частые вопросы',
+    'toc.support': '🛠️ Поддержка',
+    'page.title': 'Как создать чекер для упражнений Minecraft',
+    'page.intro': 'Публичный веб-builder для создания автоматических проверок упражнений. Курс Algoritmika · Minecraft Global ESP / ENG.',
+    'intro.builderLabel': 'Builder:',
+    'intro.sourceLabel': 'Исходный код:',
+    'steps.heading': '📝 Как пользоваться Builder',
+    'steps.s1': 'Открой <a href="teacher-ui.html"><strong>Builder</strong></a> в браузере.',
+    'steps.s2': 'Заполни <strong>Lesson info</strong> (название и описание задания).',
+    'steps.s3': 'Выбери из каталога нужные проверки (Мир + Код).',
+    'steps.s4': 'Настрой параметры — например: <code>fn = agent.interact</code>, <code>min = 1</code>.',
+    'steps.s5': 'Нажми <strong>Экспорт</strong> и скачай ZIP-архив.',
+    'steps.s6': 'Сохрани ZIP с именем по заданию. Пример: <code>m2l4-task2-completando-primer-nivel.zip</code>',
+    'steps.s7': 'Положи ZIP в Drive-папку урока.',
+    'steps.s8': 'Сообщи команде сборки LMS, что чекер готов.',
+    'steps.callout': '<strong>Соглашение об именовании:</strong> <code>&lt;модуль&gt;-&lt;урок&gt;-task&lt;N&gt;-&lt;короткое-описание&gt;.zip</code><br>Примеры: <code>m1l3-task1-laberinto-agente.zip</code> · <code>m2l1-task3-construir-granja.zip</code>',
+    'checks.heading': '🧰 Доступные проверки',
+    'checks.intro': 'В Builder больше 30 типов проверок, разделённых на две категории. Здесь самые используемые — полный каталог внутри Builder.',
+    'checks.world.title': '🌍 Мир (.mcworld)',
+    'checks.world.i1': '<code>world.valid</code> — файл валидного мира',
+    'checks.world.i2': '<code>world.name_contains</code> — имя мира содержит текст X',
+    'checks.world.i3': '<code>world.gamemode_is</code> — режим игры: creative / survival / adventure',
+    'checks.world.i4': '<code>npc.min_count</code> — минимум N NPC',
+    'checks.world.i5': '<code>npc.all_have_dialogue</code> — у всех NPC есть диалог',
+    'checks.world.i6': '<code>entity.min_count_of</code> — минимум N сущностей типа X',
+    'checks.world.i7': '<code>sign.contains_text</code> — какая-то табличка содержит текст X',
+    'checks.world.note': '+ ещё 15 проверок мира',
+    'checks.code.title': '💻 Код (.mkcd)',
+    'checks.code.i1': '<code>code.valid</code> — код компилируется',
+    'checks.code.i2': '<code>code.chat_command</code> — команда чата X существует',
+    'checks.code.i3': '<code>code.api_call_min</code> — функция X вызвана ≥ N раз',
+    'checks.code.i4': '<code>code.has_loop</code> — есть хотя бы один цикл',
+    'checks.code.i5': '<code>code.nested_loops</code> — вложенные циклы (глубина ≥ N)',
+    'checks.code.i6': '<code>code.uses_block</code> — <code>agent.setItem</code> с конкретным блоком',
+    'checks.code.i7': '<code>code.has_if</code> — есть <code>if</code> / <code>else</code>',
+    'checks.code.i8': '<code>code.uses_identifier</code> — используется идентификатор X',
+    'checks.code.note': '+ ещё 5 проверок кода',
+    'ex.heading': '💡 Типовой пример — проверка <code>agent.interact</code>',
+    'ex.title': 'Типовой случай (напр. M2L4 Task 2)',
+    'ex.q': '«Задание требует, чтобы ученик хотя бы раз использовал блок <code>agent.interact</code> в коде.»',
+    'ex.configHeading': 'Настройка в Builder:',
+    'ex.c1': 'Добавь проверку: <code>code.api_call_min</code>',
+    'ex.c2': 'Параметр <code>fn</code>: <code>agent.interact</code>',
+    'ex.c3': 'Параметр <code>min</code>: <code>1</code>',
+    'ex.outro': 'Когда ученик загрузит свой <code>.mkcd</code>, чекер проанализирует код и покажет зелёный, если <code>agent.interact</code> вызывается хотя бы раз, красный — если нет.',
+    'faq.heading': '❓ Частые вопросы',
+    'faq.q1': 'Нужно ли тестировать чекер перед сдачей?',
+    'faq.a1': 'Да, рекомендуется. В Builder встроена тестовая зона — перетащи пример <code>.mcworld</code> или <code>.mkcd</code> и убедись, что критерии работают как ожидалось.',
+    'faq.q2': 'Что делать, если нужной проверки нет в каталоге?',
+    'faq.a2': 'Сообщи <strong>@FaintKom</strong> (Mario). Новые проверки добавляются в код Builder и становятся доступны всем через несколько минут (GitHub Pages пересобирается автоматически).',
+    'faq.q3': 'В каком браузере работает?',
+    'faq.a3': 'Chrome, Edge, Firefox и Safari современные (последние 2 года). <strong>Не</strong> работает в Internet Explorer.',
+    'faq.q4': 'Можно ли сохранить и переделать чекер после экспорта?',
+    'faq.a4': 'Да. Перед экспортом скопируй JSON конфигурации задачи (кнопка в Builder). Вставишь его обратно потом, чтобы продолжить редактирование.',
+    'faq.q5': 'Работает ли offline?',
+    'faq.a5': 'Builder статический, но грузит библиотеки с CDN. Если нужен offline-режим — попроси у Mario скачиваемую копию HTML.',
+    'support.heading': '🛠️ Поддержка',
+    'support.i1': 'Баги и предложения: <strong>@FaintKom</strong> (Mario Becerra)',
+    'support.i2': 'Репозиторий кода: <a href="https://github.com/FaintKom/mc-edu-checker-builder">github.com/FaintKom/mc-edu-checker-builder</a>',
+    'support.i3': 'Сообщить о баге: <a href="https://github.com/FaintKom/mc-edu-checker-builder/issues/new">создать issue на GitHub</a>',
+    'footer.updated': 'Последнее обновление: 2026-05-11',
+    'footer.back': '← Вернуться на главную',
+  },
+  en: {
+    _title: 'How to use the Builder · Minecraft Checker Builder',
+    'topbar.home': '← Home',
+    'topbar.title': 'How to use the Builder',
+    'topbar.openBuilder': 'Open Builder →',
+    'toc.heading': 'On this page',
+    'toc.steps': '📝 How to use',
+    'toc.checks': '🧰 Checks',
+    'toc.example': '💡 Common example',
+    'toc.faq': '❓ FAQ',
+    'toc.support': '🛠️ Support',
+    'page.title': 'How to create a checker for Minecraft exercises',
+    'page.intro': 'Public web Builder for creating automatic checkers for Minecraft exercises. Algoritmika · Minecraft Global ESP / ENG course.',
+    'intro.builderLabel': 'Builder:',
+    'intro.sourceLabel': 'Source code:',
+    'steps.heading': '📝 How to use the Builder',
+    'steps.s1': 'Open the <a href="teacher-ui.html"><strong>Builder</strong></a> in your browser.',
+    'steps.s2': 'Fill in <strong>Lesson info</strong> (exercise title and description).',
+    'steps.s3': 'Pick the checks you need from the catalog (World + Code).',
+    'steps.s4': 'Adjust the parameters — for example: <code>fn = agent.interact</code>, <code>min = 1</code>.',
+    'steps.s5': 'Click <strong>Export</strong> and download the ZIP file.',
+    'steps.s6': 'Save the ZIP with the exercise name. Example: <code>m2l4-task2-completing-first-level.zip</code>',
+    'steps.s7': 'Upload the ZIP to the lesson Drive folder.',
+    'steps.s8': 'Notify the LMS assembly team that the checker is ready.',
+    'steps.callout': '<strong>Naming convention:</strong> <code>&lt;module&gt;-&lt;lesson&gt;-task&lt;N&gt;-&lt;short-description&gt;.zip</code><br>Examples: <code>m1l3-task1-agent-maze.zip</code> · <code>m2l1-task3-build-farm.zip</code>',
+    'checks.heading': '🧰 Available checks',
+    'checks.intro': 'The Builder offers 30+ check types, split into two categories. These are the most-used ones — the full catalog is inside the Builder.',
+    'checks.world.title': '🌍 World (.mcworld)',
+    'checks.world.i1': '<code>world.valid</code> — the file is a valid world',
+    'checks.world.i2': '<code>world.name_contains</code> — world name contains text X',
+    'checks.world.i3': '<code>world.gamemode_is</code> — gamemode: creative / survival / adventure',
+    'checks.world.i4': '<code>npc.min_count</code> — at least N NPCs',
+    'checks.world.i5': '<code>npc.all_have_dialogue</code> — all NPCs have dialogue',
+    'checks.world.i6': '<code>entity.min_count_of</code> — at least N entities of type X',
+    'checks.world.i7': '<code>sign.contains_text</code> — some sign contains text X',
+    'checks.world.note': '+ 15 more world checks',
+    'checks.code.title': '💻 Code (.mkcd)',
+    'checks.code.i1': '<code>code.valid</code> — code compiles',
+    'checks.code.i2': '<code>code.chat_command</code> — chat command X exists',
+    'checks.code.i3': '<code>code.api_call_min</code> — function X called ≥ N times',
+    'checks.code.i4': '<code>code.has_loop</code> — uses at least one loop',
+    'checks.code.i5': '<code>code.nested_loops</code> — nested loops (depth ≥ N)',
+    'checks.code.i6': '<code>code.uses_block</code> — <code>agent.setItem</code> with a specific block',
+    'checks.code.i7': '<code>code.has_if</code> — code contains <code>if</code> / <code>else</code>',
+    'checks.code.i8': '<code>code.uses_identifier</code> — uses identifier X',
+    'checks.code.note': '+ 5 more code checks',
+    'ex.heading': '💡 Common example — validating <code>agent.interact</code>',
+    'ex.title': 'Typical case (e.g. M2L4 Task 2)',
+    'ex.q': '"The exercise asks the student to use the <code>agent.interact</code> block at least once in their code."',
+    'ex.configHeading': 'Builder configuration:',
+    'ex.c1': 'Add check: <code>code.api_call_min</code>',
+    'ex.c2': 'Parameter <code>fn</code>: <code>agent.interact</code>',
+    'ex.c3': 'Parameter <code>min</code>: <code>1</code>',
+    'ex.outro': 'When the student uploads their <code>.mkcd</code>, the checker analyzes the code and shows green if <code>agent.interact</code> is called at least once, red otherwise.',
+    'faq.heading': '❓ Frequently asked questions',
+    'faq.q1': 'Do I need to test the checker before handing it off?',
+    'faq.a1': 'Yes, recommended. The Builder has a built-in test area — drag a sample <code>.mcworld</code> or <code>.mkcd</code> and verify your criteria work as expected.',
+    'faq.q2': 'What if I need a check that\'s not in the catalog?',
+    'faq.a2': 'Ping <strong>@FaintKom</strong> (Mario). New checks are added to the Builder code and become available to everyone within minutes (GitHub Pages auto-rebuilds).',
+    'faq.q3': 'Does it work in every browser?',
+    'faq.a3': 'Modern Chrome, Edge, Firefox and Safari (last 2 years). <strong>Not</strong> in Internet Explorer.',
+    'faq.q4': 'Can I save and re-edit a checker after exporting?',
+    'faq.a4': 'Yes. Before exporting, copy the exercise JSON config (button in Builder). Paste it back later to keep editing.',
+    'faq.q5': 'Does it work offline?',
+    'faq.a5': 'The Builder is static but loads libs from CDN. If you need offline use, ask Mario for a downloadable HTML copy.',
+    'support.heading': '🛠️ Support',
+    'support.i1': 'Bugs and suggestions: <strong>@FaintKom</strong> (Mario Becerra)',
+    'support.i2': 'Source repo: <a href="https://github.com/FaintKom/mc-edu-checker-builder">github.com/FaintKom/mc-edu-checker-builder</a>',
+    'support.i3': 'Report an issue: <a href="https://github.com/FaintKom/mc-edu-checker-builder/issues/new">create an issue on GitHub</a>',
+    'footer.updated': 'Last update: 2026-05-11',
+    'footer.back': '← Back to home',
+  },
+};
+
+let currentLang = localStorage.getItem('mcb_lang') || 'es';
+if (!I18N[currentLang]) currentLang = 'es';
+
+function applyLang() {
+  document.documentElement.lang = currentLang;
+  const dict = I18N[currentLang];
+  if (dict._title) document.title = dict._title;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (dict[key] !== undefined) el.innerHTML = dict[key];
+  });
+  document.querySelectorAll('#langSwitch button').forEach(b => {
+    b.classList.toggle('active', b.dataset.lang === currentLang);
+  });
+}
+
+document.querySelectorAll('#langSwitch button').forEach(b => {
+  b.addEventListener('click', () => {
+    currentLang = b.dataset.lang;
+    localStorage.setItem('mcb_lang', currentLang);
+    applyLang();
+  });
+});
+
+applyLang();
+</script>
 
 </body>
 </html>

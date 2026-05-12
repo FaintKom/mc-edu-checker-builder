@@ -11,8 +11,12 @@
   --accent:#e94560;--accent2:#4dabf7;--text:#ecf0f1;--dim:#95a5a6;--border:rgba(255,255,255,.08);
 }
 html,body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;min-height:100vh}
-body{font-size:15px;line-height:1.6;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px}
-.wrap{max-width:760px;width:100%}
+body{font-size:15px;line-height:1.6;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;position:relative}
+.lang-switch{position:absolute;top:18px;right:20px;display:inline-flex;background:var(--surface);border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.lang-switch button{background:transparent;border:none;color:var(--dim);padding:6px 11px;font-size:.78rem;font-weight:600;cursor:pointer;letter-spacing:.5px;font-family:inherit}
+.lang-switch button.active{background:var(--accent2);color:#fff}
+.lang-switch button:not(.active):hover{background:var(--surface2);color:var(--text)}
+.wrap{max-width:880px;width:100%}
 h1{font-size:1.9rem;font-weight:700;margin-bottom:6px}
 .sub{color:var(--dim);font-size:1rem;margin-bottom:32px}
 .cards{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:28px}
@@ -23,54 +27,140 @@ h1{font-size:1.9rem;font-weight:700;margin-bottom:6px}
 .card h2{font-size:1.1rem;font-weight:700;color:var(--accent2)}
 .card p{color:var(--dim);font-size:.9rem;line-height:1.5}
 .card .audience{margin-top:auto;color:var(--accent);font-size:.78rem;font-weight:600;letter-spacing:.5px;text-transform:uppercase}
-.notes{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 22px;font-size:.88rem;color:var(--dim)}
-.notes h3{color:var(--text);font-size:.95rem;margin-bottom:8px}
-.notes ul{padding-left:20px}
-.notes li{margin-bottom:4px}
-.notes code{background:var(--bg);padding:1px 6px;border-radius:4px;font-family:Consolas,monospace;color:var(--accent2)}
+code{background:var(--bg);padding:1px 6px;border-radius:4px;font-family:Consolas,monospace;color:var(--accent2)}
 .footer{margin-top:28px;font-size:.78rem;color:var(--dim)}
 .footer a{color:var(--accent2);text-decoration:none}
 .footer a:hover{text-decoration:underline}
 </style>
 </head>
 <body>
+
+<div class="lang-switch" id="langSwitch">
+  <button data-lang="es">ES</button>
+  <button data-lang="ru">RU</button>
+  <button data-lang="en">EN</button>
+</div>
+
 <div class="wrap">
-  <h1>🎮 Minecraft Checker Builder</h1>
-  <p class="sub">Verificadores automáticos para ejercicios de Minecraft Education · Algoritmika</p>
+  <h1 data-i18n="title">🎮 Minecraft Checker Builder</h1>
+  <p class="sub" data-i18n="subtitle">Verificadores automáticos para ejercicios de Minecraft Education · Algoritmika</p>
 
   <div class="cards">
     <a class="card" href="teacher-ui.html">
       <span class="icon">🛠️</span>
-      <h2>Builder — crear un checker</h2>
-      <p>Configura las comprobaciones (mundo + código), descarga el ZIP listo para subir a la plataforma como nivel <code>frame_box</code>.</p>
-      <span class="audience">Para metodólogos</span>
+      <h2 data-i18n="card.builder.title">Builder — crear un checker</h2>
+      <p data-i18n="card.builder.desc">Configura las comprobaciones (mundo + código), descarga el ZIP listo para subir a la plataforma como nivel <code>frame_box</code>.</p>
+      <span class="audience" data-i18n="card.builder.audience">Para metodólogos</span>
     </a>
 
     <a class="card" href="como-usar.html">
       <span class="icon">📝</span>
-      <h2>Cómo usar el Builder</h2>
-      <p>Guía paso a paso (en español): cómo configurar las comprobaciones, exportar el ZIP, nombrarlo y entregarlo al ensamblaje.</p>
-      <span class="audience">Manual de usuario</span>
+      <h2 data-i18n="card.howto.title">Cómo usar el Builder</h2>
+      <p data-i18n="card.howto.desc">Guía paso a paso (en español): cómo configurar las comprobaciones, exportar el ZIP, nombrarlo y entregarlo al ensamblaje.</p>
+      <span class="audience" data-i18n="card.howto.audience">Manual de usuario</span>
     </a>
 
     <a class="card" href="runner.html">
       <span class="icon">▶️</span>
-      <h2>Runner — probar un .mkcd</h2>
-      <p>Versión standalone para probar el archivo de código de un alumno contra un preset hardcoded (M2L1 barn/house, agent-fence, etc.).</p>
-      <span class="audience">Demos / pruebas</span>
+      <h2 data-i18n="card.runner.title">Runner — probar un .mkcd</h2>
+      <p data-i18n="card.runner.desc">Versión standalone para probar el archivo de código de un alumno contra un preset hardcoded (M2L1 barn/house, agent-fence, etc.).</p>
+      <span class="audience" data-i18n="card.runner.audience">Demos / pruebas</span>
     </a>
 
     <a class="card" href="https://github.com/FaintKom/mc-edu-checker-builder">
       <span class="icon">🛠️</span>
-      <h2>Source en GitHub</h2>
-      <p>Código fuente del proyecto, issues y feature requests.</p>
-      <span class="audience">Desarrollo</span>
+      <h2 data-i18n="card.source.title">Source en GitHub</h2>
+      <p data-i18n="card.source.desc">Código fuente del proyecto, issues y feature requests.</p>
+      <span class="audience" data-i18n="card.source.audience">Desarrollo</span>
     </a>
   </div>
 
   <div class="footer">
-    <a href="https://github.com/FaintKom/mc-edu-checker-builder">Source en GitHub</a> · v1.0
+    <a href="https://github.com/FaintKom/mc-edu-checker-builder">github.com/FaintKom/mc-edu-checker-builder</a> · v1.1
   </div>
 </div>
+
+<script>
+const I18N = {
+  es: {
+    _title: 'Algoritmika · Minecraft Checker Builder',
+    title: '🎮 Minecraft Checker Builder',
+    subtitle: 'Verificadores automáticos para ejercicios de Minecraft Education · Algoritmika',
+    'card.builder.title': 'Builder — crear un checker',
+    'card.builder.desc': 'Configura las comprobaciones (mundo + código), descarga el ZIP listo para subir a la plataforma como nivel <code>frame_box</code>.',
+    'card.builder.audience': 'Para metodólogos',
+    'card.howto.title': 'Cómo usar el Builder',
+    'card.howto.desc': 'Guía paso a paso (en español): cómo configurar las comprobaciones, exportar el ZIP, nombrarlo y entregarlo al ensamblaje.',
+    'card.howto.audience': 'Manual de usuario',
+    'card.runner.title': 'Runner — probar un .mkcd',
+    'card.runner.desc': 'Versión standalone para probar el archivo de código de un alumno contra un preset hardcoded (M2L1 barn/house, agent-fence, etc.).',
+    'card.runner.audience': 'Demos / pruebas',
+    'card.source.title': 'Source en GitHub',
+    'card.source.desc': 'Código fuente del proyecto, issues y feature requests.',
+    'card.source.audience': 'Desarrollo',
+  },
+  ru: {
+    _title: 'Algoritmika · Minecraft Checker Builder',
+    title: '🎮 Minecraft Checker Builder',
+    subtitle: 'Автоматические чекеры для упражнений Minecraft Education · Algoritmika',
+    'card.builder.title': 'Builder — создать чекер',
+    'card.builder.desc': 'Настрой проверки (мир + код), скачай ZIP, готовый для загрузки на платформу как уровень <code>frame_box</code>.',
+    'card.builder.audience': 'Для методистов',
+    'card.howto.title': 'Как пользоваться Builder',
+    'card.howto.desc': 'Пошаговое руководство (на испанском): как настроить проверки, экспортировать ZIP, назвать и передать команде сборки.',
+    'card.howto.audience': 'Руководство пользователя',
+    'card.runner.title': 'Runner — проверить .mkcd',
+    'card.runner.desc': 'Standalone-версия для проверки кода ученика по хардкод-пресету (M2L1 barn/house, agent-fence и др.).',
+    'card.runner.audience': 'Демо / тесты',
+    'card.source.title': 'Исходники на GitHub',
+    'card.source.desc': 'Исходный код проекта, баги и feature-реквесты.',
+    'card.source.audience': 'Разработка',
+  },
+  en: {
+    _title: 'Algoritmika · Minecraft Checker Builder',
+    title: '🎮 Minecraft Checker Builder',
+    subtitle: 'Automatic checkers for Minecraft Education exercises · Algoritmika',
+    'card.builder.title': 'Builder — create a checker',
+    'card.builder.desc': 'Configure checks (world + code), download a ZIP ready to upload to the platform as a <code>frame_box</code> level.',
+    'card.builder.audience': 'For methodologists',
+    'card.howto.title': 'How to use the Builder',
+    'card.howto.desc': 'Step-by-step guide: how to configure checks, export the ZIP, name it, and hand it off to the assembly team.',
+    'card.howto.audience': 'User manual',
+    'card.runner.title': 'Runner — test a .mkcd',
+    'card.runner.desc': 'Standalone version to test a student .mkcd file against a hardcoded preset (M2L1 barn/house, agent-fence, etc.).',
+    'card.runner.audience': 'Demos / testing',
+    'card.source.title': 'Source on GitHub',
+    'card.source.desc': 'Project source code, issues and feature requests.',
+    'card.source.audience': 'Development',
+  },
+};
+
+let currentLang = localStorage.getItem('mcb_lang') || 'es';
+if (!I18N[currentLang]) currentLang = 'es';
+
+function applyLang() {
+  document.documentElement.lang = currentLang;
+  const dict = I18N[currentLang];
+  if (dict._title) document.title = dict._title;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (dict[key] !== undefined) el.innerHTML = dict[key];
+  });
+  document.querySelectorAll('#langSwitch button').forEach(b => {
+    b.classList.toggle('active', b.dataset.lang === currentLang);
+  });
+}
+
+document.querySelectorAll('#langSwitch button').forEach(b => {
+  b.addEventListener('click', () => {
+    currentLang = b.dataset.lang;
+    localStorage.setItem('mcb_lang', currentLang);
+    applyLang();
+  });
+});
+
+applyLang();
+</script>
+
 </body>
 </html>
