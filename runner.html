@@ -18,6 +18,8 @@ body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--
 .header{text-align:center;padding:22px 16px 14px;background:linear-gradient(135deg,var(--surface),var(--surface2))}
 .header h1{font-size:1.5rem;font-weight:700;letter-spacing:.4px}
 .header p{color:var(--dim);font-size:.88rem;margin-top:5px;max-width:680px;margin-inline:auto}
+.home-link{position:absolute;top:14px;left:18px;color:var(--dim);font-size:.8rem;text-decoration:none;display:inline-flex;align-items:center;gap:5px;z-index:5}
+.home-link:hover{color:var(--text)}
 .lang-switch{position:absolute;top:14px;right:18px;display:inline-flex;background:var(--bg);border:1px solid var(--border);border-radius:6px;overflow:hidden}
 .lang-switch button{background:transparent;border:none;color:var(--dim);padding:5px 9px;font-size:.75rem;font-weight:600;cursor:pointer;letter-spacing:.5px}
 .lang-switch button.active{background:var(--accent2);color:#fff}
@@ -80,6 +82,7 @@ details.diag summary:hover{color:var(--text)}
 </head>
 <body>
 <div class="header">
+  <a class="home-link" href="index.html" id="homeLink">← Inicio</a>
   <div class="lang-switch">
     <button data-lang="es" class="active">ES</button>
     <button data-lang="ru">RU</button>
@@ -421,18 +424,21 @@ const PRESETS = {
 
 const UI_TEXT = {
   ru: { hdrTitle:'🧩 Проверка кода Minecraft', hdrSub:'Загрузи файл проекта <code>.mkcd</code> из Code Builder, чтобы автоматически проверить решение.',
+        homeLink:'← На главную',
         lblPreset:'Урок:', dropText:'Перетащи <strong>.mkcd</strong> сюда или нажми чтобы выбрать', analyzing:'Разбираю проект…',
         invalidFile:'Это не файл .mkcd', readError:'Не удалось прочитать файл',
         scoreOk:'Все проверки пройдены', scoreFail:'Ещё надо доработать',
         scoreOkSub:'Решение засчитано', scoreFailSub:n => `Не пройдено: ${n}`,
         diagShow:'Показать код ученика', diagHide:'Скрыть код' },
   es: { hdrTitle:'🧩 Verificador de código Minecraft', hdrSub:'Sube el archivo <code>.mkcd</code> de Code Builder para revisar la solución.',
+        homeLink:'← Inicio',
         lblPreset:'Lección:', dropText:'Arrastra el <strong>.mkcd</strong> aquí o haz clic', analyzing:'Analizando proyecto…',
         invalidFile:'Esto no es un archivo .mkcd', readError:'No pude leer el archivo',
         scoreOk:'¡Todo correcto!', scoreFail:'Falta ajustar algo',
         scoreOkSub:'Solución aprobada', scoreFailSub:n => `Sin pasar: ${n}`,
         diagShow:'Mostrar código del estudiante', diagHide:'Ocultar código' },
   en: { hdrTitle:'🧩 Minecraft Code Checker', hdrSub:'Upload your <code>.mkcd</code> Code Builder project to check it automatically.',
+        homeLink:'← Home',
         lblPreset:'Lesson:', dropText:'Drop your <strong>.mkcd</strong> here or click to select', analyzing:'Parsing project…',
         invalidFile:'Not a .mkcd file', readError:'Failed to read file',
         scoreOk:'All checks passed', scoreFail:'Needs more work',
@@ -463,6 +469,7 @@ function setLang(lang){
   const t = UI_TEXT[lang];
   $('hdrTitle').innerText = t.hdrTitle;
   $('hdrSub').innerHTML = t.hdrSub;
+  $('homeLink').innerText = t.homeLink;
   $('lblPreset').innerText = t.lblPreset;
   $('dropText').innerHTML = t.dropText;
   $('analyzingText').innerText = t.analyzing;

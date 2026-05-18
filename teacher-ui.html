@@ -17,6 +17,8 @@ body{font-size:14px;line-height:1.5}
 button{font-family:inherit}
 
 .topbar{background:linear-gradient(135deg,var(--surface),var(--surface2));padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px;flex-wrap:wrap;position:sticky;top:0;z-index:20}
+.topbar a.home{color:var(--dim);font-size:.85rem;display:inline-flex;align-items:center;gap:6px;text-decoration:none;flex-shrink:0}
+.topbar a.home:hover{color:var(--text)}
 .topbar h1{font-size:1.15rem;font-weight:700;letter-spacing:.3px;flex-shrink:0}
 .topbar .subtitle{color:var(--dim);font-size:.8rem;flex:1;min-width:200px}
 .topbar-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
@@ -214,6 +216,7 @@ button{font-family:inherit}
 <body>
 
 <div class="topbar">
+  <a class="home" href="index.html" data-t="topbar.home">← Inicio</a>
   <h1 id="appTitle"></h1>
   <div class="subtitle" id="appSubtitle"></div>
   <div class="topbar-actions">
@@ -848,6 +851,7 @@ const I18N = {
   es: {
     'app.title': '🧪 Constructor de revisores (mundo + código)',
     'app.subtitle': 'Configura criterios para .mcworld y/o .mkcd (Code Builder) y exporta un ZIP listo para FrameBox.',
+    'topbar.home': '← Inicio',
     'btn.tour': 'Tour',
     'btn.help': 'Guía',
     'btn.presets': '📋 Presets',
@@ -951,6 +955,7 @@ const I18N = {
   ru: {
     'app.title': '🧪 Конструктор проверок (мир + код)',
     'app.subtitle': 'Настрой критерии для .mcworld и/или .mkcd (Code Builder) и экспортируй ZIP во FrameBox.',
+    'topbar.home': '← На главную',
     'btn.tour': 'Тур',
     'btn.help': 'Справочник',
     'btn.presets': '📋 Пресеты',
@@ -1054,6 +1059,7 @@ const I18N = {
   en: {
     'app.title': '🧪 Checker Builder (world + code)',
     'app.subtitle': 'Configure criteria for .mcworld and/or .mkcd (Code Builder) and export a ZIP ready for FrameBox.',
+    'topbar.home': '← Home',
     'btn.tour': 'Tour',
     'btn.help': 'Cheatsheet',
     'btn.presets': '📋 Presets',
